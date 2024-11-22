@@ -1,0 +1,21 @@
+{
+  "name": "hide-and-seek",
+  "description": "Geoguesser hide and seek game",
+  "version": "0.1",
+  "files": [],
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build --outDir dist --base './'",
+    "test": "tsc --no-emit",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.53.5",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.6"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
