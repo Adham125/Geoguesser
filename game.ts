@@ -35,7 +35,7 @@ async function initialize(): Promise<void> {
     const request: google.maps.StreetViewLocationRequest = {
       location: new google.maps.LatLng(lat, lng),
       preference: google.maps.StreetViewPreference.NEAREST,
-      radius: 1000000,
+      radius: 40000,
       sources: [google.maps.StreetViewSource.GOOGLE]
     };
   
