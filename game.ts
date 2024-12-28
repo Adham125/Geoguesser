@@ -108,7 +108,8 @@ function confirmSelect() {
     placeMarker(location as google.maps.LatLng)
     confirmButton.disabled = true
     alert(`You scored ${points}`)
-    
+    let bounds = new google.maps.LatLngBounds(location, markers[markers.length-2].getPosition())
+    map.fitBounds(bounds)
   }else{
     alert("You need to select a location first!");
   }
