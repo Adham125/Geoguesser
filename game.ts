@@ -1,6 +1,8 @@
 let map: google.maps.Map;
 let markers: google.maps.Marker[] = [];
 let location: google.maps.LatLng | null | undefined
+const confirmButton = document.getElementById("Confirm") as HTMLButtonElement;
+const nextButton = document.getElementById("Next") as HTMLButtonElement;
 
 async function initialize(): Promise<void> {
   //const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
@@ -24,11 +26,9 @@ async function initialize(): Promise<void> {
     placeMarker(e.latLng);
   });
 
-
-  document
-    .getElementById("Confirm")!
-    .addEventListener("click", confirmSelect);
-  
+  confirmButton.addEventListener("click", confirmSelect);
+  nextButton.addEventListener("click", nextRound);
+    
   const streetViewService = new google.maps.StreetViewService();
 
   while(true){
@@ -36,7 +36,7 @@ async function initialize(): Promise<void> {
       location: new google.maps.LatLng(lat, lng),
       preference: google.maps.StreetViewPreference.NEAREST,
       radius: 1000000,
-      sources: [google.maps.StreetViewSource.OUTDOOR, google.maps.StreetViewSource.GOOGLE]
+      sources: [google.maps.StreetViewSource.GOOGLE]
     };
   
     const sv = await streetViewService.getPanorama(request, (data, status) => {
@@ -97,12 +97,18 @@ function setMapOnAll(map: google.maps.Map | null) {
   }
 }
 
+function nextRound(){
+  confirmButton.disabled = false
+  initialize()
+}
+
 function confirmSelect() {
   if (markers.length > 0 ){
     const points = Math.floor(calculatePoints())
+    placeMarker(location as google.maps.LatLng)
+    confirmButton.disabled = true
     alert(`You scored ${points}`)
-
-    initialize()
+    
   }else{
     alert("You need to select a location first!");
   }
