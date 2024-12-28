@@ -4,7 +4,7 @@
     <title>Street View split-map-panes</title>
 
     <link rel="stylesheet" type="text/css" href="./style.css" />
-    <script src="./game.ts"></script>
+    <script type="module" src="./game.js"></script>
   </head>
   <body>
     <div id="map"></div>
@@ -12,6 +12,7 @@
     <div id="floating-panel">
       <input id="Confirm" type="button" value="Confirm" />
       <input id="Next" type="button" value="Next" />
+      <input type="range" min="100" max="1000000" value="500000" class="slider" id="myRange">
     </div>
     
     <script
