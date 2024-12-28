@@ -5,5 +5,3 @@ NPM is a prerequisite
 npm i
 npm start 
 ```
-
-## Feedback
