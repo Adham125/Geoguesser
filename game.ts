@@ -1,10 +1,10 @@
 let map: google.maps.Map;
 let markers: google.maps.Marker[] = [];
-let location: {lat: number, lng: number}
+let location: google.maps.LatLng | null | undefined
 
 async function initialize(lat: number, lng: number): Promise<void> {
   //const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
-  location = { lat: lat, lng: lng };
+  location = new google.maps.LatLng(lat, lng)
   const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(
     document.getElementById("map") as HTMLElement,
@@ -43,9 +43,9 @@ async function initialize(lat: number, lng: number): Promise<void> {
           showRoadLabels: false,
         });
         streetView.setPano(data.location.pano); // Set the pano ID from the StreetViewPanoramaData
+        location = data.location.latLng
       }
     });
-    console.log(sv)
     if (sv != undefined){
       break
     }else{
@@ -95,8 +95,45 @@ function setMapOnAll(map: google.maps.Map | null) {
 }
 
 function confirmSelect() {
-
+  let points = calculatePoints()
 }
+
+function calculatePoints(){
+  if (markers.length > 0 ){
+    const markerPosition = markers[markers.length-1].getPosition();
+    let lat = markerPosition?.lat()
+    let lng = markerPosition?.lng()
+    let distance = haversineDistance(location, lat, lng)
+
+    const score = 5000 * Math.E ** (-10 * distance / 14916.862)
+    return score
+  }else{
+    alert("You need to select a location first!");
+  }
+  
+}
+
+const haversineDistance = (latlng, lat2, lon2): number => {
+  const R = 6371; // Earth's radius in kilometers
+  const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
+
+  //console.log(latlng.lat(), latlng.lng(), lat2, lon2)
+  const φ1 = toRadians(latlng.lat());
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - latlng.lat());
+  const Δλ = toRadians(lon2 - latlng.lng());
+  //console.log(φ1, φ2, Δφ, Δλ)
+  
+  // Haversine formula
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  
+  // Distance in kilometers
+  const distance = R * c;
+  return distance;
+};
 
 const styles: Record<string, google.maps.MapTypeStyle[]> = {
   default: [],
