@@ -2,8 +2,11 @@ let map: google.maps.Map;
 let markers: google.maps.Marker[] = [];
 let location: google.maps.LatLng | null | undefined
 
-async function initialize(lat: number, lng: number): Promise<void> {
+async function initialize(): Promise<void> {
   //const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
+  let lat = Math.random() * (85 - -85) + -85;
+  let lng = Math.random() * (170 - -170) + -170;
+  
   location = new google.maps.LatLng(lat, lng)
   const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(
@@ -95,22 +98,24 @@ function setMapOnAll(map: google.maps.Map | null) {
 }
 
 function confirmSelect() {
-  let points = calculatePoints()
-}
-
-function calculatePoints(){
   if (markers.length > 0 ){
-    const markerPosition = markers[markers.length-1].getPosition();
-    let lat = markerPosition?.lat()
-    let lng = markerPosition?.lng()
-    let distance = haversineDistance(location, lat, lng)
+    const points = Math.floor(calculatePoints())
+    alert(`You scored ${points}`)
 
-    const score = 5000 * Math.E ** (-10 * distance / 14916.862)
-    return score
+    initialize()
   }else{
     alert("You need to select a location first!");
   }
-  
+}
+
+function calculatePoints(){
+  const markerPosition = markers[markers.length-1].getPosition();
+  let lat = markerPosition?.lat()
+  let lng = markerPosition?.lng()
+  let distance = haversineDistance(location, lat, lng)
+
+  const score = 5000 * Math.E ** (-10 * distance / 14916.862)
+  return score
 }
 
 const haversineDistance = (latlng, lat2, lon2): number => {
@@ -155,7 +160,6 @@ declare global {
     initialize: () => void;
   }
 }
-let lat = Math.random() * (85 - -85) + -85;
-let lng = Math.random() * (170 - -170) + -170;
-window.initialize = async () => { initialize(lat, lng); };
+
+window.initialize = async () => { initialize(); };
 export {};
