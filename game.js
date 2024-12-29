@@ -1,4 +1,5 @@
 let map;
+let streetView;
 let markers = [];
 let location = null;
 const confirmButton = document.getElementById("Confirm");
@@ -9,7 +10,7 @@ async function initialize() {
   let lng = Math.random() * (170 - -170) + -170;
 
   location = new google.maps.LatLng(lat, lng);
-  const fenway = { lat: 42.345573, lng: -71.098326 };
+  //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
     zoom: 3,
@@ -24,6 +25,7 @@ async function initialize() {
 
   confirmButton.addEventListener("click", confirmSelect);
   nextButton.addEventListener("click", nextRound);
+  nextButton.disabled = true;
 
   const streetViewService = new google.maps.StreetViewService();
 
@@ -37,7 +39,7 @@ async function initialize() {
 
     const sv = await streetViewService.getPanorama(request, (data, status) => {
       if (status === google.maps.StreetViewStatus.OK && data?.location) {
-        const streetView = new google.maps.StreetViewPanorama(document.getElementById("pano"), {
+          streetView = new google.maps.StreetViewPanorama(document.getElementById("pano"), {
           disableDefaultUI: true,
           showRoadLabels: false,
         });
@@ -52,6 +54,15 @@ async function initialize() {
       lng = Math.random() * (170 - -170) + -170;
     }
   }
+
+  streetView.addListener("pov_changed", () => {
+    
+    const heading = streetView.getPov().heading; // Get the current heading in degrees
+    console.log(heading)
+    const compassImage = document.getElementById("compass-image");
+    // Rotate the compass based on heading
+    compassImage.style.transform = `rotate(${heading}deg)`;
+});
 }
 
 class GameSessionStorage {
@@ -96,10 +107,13 @@ function nextRound() {
 
 function confirmSelect() {
   if (markers.length > 0) {
-    const points = Math.floor(calculatePoints());
+    const pointsReturn = calculatePoints()
+    const points = Math.floor(pointsReturn[0]);
+    const distance = Math.floor(pointsReturn[1]);
     placeMarker(location);
     confirmButton.disabled = true;
-    alert(`You scored ${points}`);
+    nextButton.disabled = false;
+    alert(`You scored ${points}\nDistance to location was ${distance}Km`);
     let bounds = new google.maps.LatLngBounds(location, markers[markers.length - 2].getPosition());
     map.fitBounds(bounds);
   } else {
@@ -114,7 +128,7 @@ function calculatePoints() {
   let distance = haversineDistance(location, lat, lng);
 
   const score = 5000 * Math.E ** (-10 * distance / 14916.862);
-  return score;
+  return [score,distance];
 }
 
 const haversineDistance = (latlng, lat2, lon2) => {
