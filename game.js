@@ -5,6 +5,11 @@ let location = null;
 const confirmButton = document.getElementById("Confirm");
 const nextButton = document.getElementById("Next");
 
+const tooltip = document.getElementById("slider-tooltip");
+const slider = document.getElementById("myRange")
+updateTooltip();
+slider.addEventListener("input", updateTooltip);
+
 async function initialize() {
   let lat = Math.random() * (85 - -85) + -85;
   let lng = Math.random() * (170 - -170) + -170;
@@ -148,6 +153,20 @@ const haversineDistance = (latlng, lat2, lon2) => {
   const distance = R * c;
   return distance;
 };
+
+function updateTooltip() {
+  const sliderValue = slider.value;
+
+  // Update the tooltip text
+  tooltip.textContent = sliderValue;
+
+  // Calculate the position of the tooltip below the slider thumb
+  const sliderRect = slider.getBoundingClientRect();
+  const thumbOffset = ((sliderValue - slider.min) / (slider.max - slider.min)) * (sliderRect.width)  + 100;
+
+  // Update tooltip position
+  tooltip.style.left = `${thumbOffset}px`;
+}
 
 const styles = {
   default: [],
