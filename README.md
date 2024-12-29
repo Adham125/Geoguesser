@@ -1,7 +1,7 @@
 # Intro
 This is a free singleplayer GeoGuesser game! You get dropped in a random location and have to guess where on the world map you are.
 
-Made by: @Adham125
+Made by: [Adham125](https://github.com/Adham125)
 
 # Controls
 
