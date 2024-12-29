@@ -33,9 +33,10 @@ async function initialize() {
     const request = {
       location: new google.maps.LatLng(lat, lng),
       preference: google.maps.StreetViewPreference.NEAREST,
-      radius: 40000,
+      radius: Number(document.getElementById("myRange").value),
       sources: [google.maps.StreetViewSource.GOOGLE],
     };
+    console.log(document.getElementById("myRange").value)
 
     const sv = await streetViewService.getPanorama(request, (data, status) => {
       if (status === google.maps.StreetViewStatus.OK && data?.location) {
@@ -58,7 +59,6 @@ async function initialize() {
   streetView.addListener("pov_changed", () => {
     
     const heading = streetView.getPov().heading; // Get the current heading in degrees
-    console.log(heading)
     const compassImage = document.getElementById("compass-image");
     // Rotate the compass based on heading
     compassImage.style.transform = `rotate(${heading}deg)`;
