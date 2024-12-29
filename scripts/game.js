@@ -21,7 +21,7 @@ async function initialize() {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
-    zoom: 3,
+    zoom: 2,
     disableDefaultUI: true,
     mapId: "1b65baa89de7a1e3",
   });
@@ -93,11 +93,28 @@ class GameSessionStorage {
 }
 
 function placeMarker(latLng, colour) {
-  const markerNew = new google.maps.marker.AdvancedMarkerElement({
-    position: latLng,
-    map: map, 
-    content: new google.maps.marker.PinElement({background: `#${colour}`,}).element,
-  });
+  let markerNew;
+  if (colour == "00FF00"){
+    const img = document.createElement("img");
+    img.src = "../imgs/red-flag.png";
+    img.style.width = "60px"; // Adjust the size as needed
+    img.style.height = "40px"; // Adjust the size as needed
+    img.style.pointerEvents = "none"; // Ensures the image doesn't interfere with user interactions
+
+    markerNew = new google.maps.marker.AdvancedMarkerElement({
+      position: latLng,
+      map: map, 
+      content: img,
+    });
+  }else{
+    markerNew = new google.maps.marker.AdvancedMarkerElement({
+      position: latLng,
+      map: map, 
+      content: new google.maps.marker.PinElement({background: `#${colour}`,}).element,
+    });
+  }
+
+  
   markers.push(markerNew);
 }
 

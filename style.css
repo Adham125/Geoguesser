@@ -21,7 +21,7 @@ body {
   height: 15vh; 
   z-index: 2; 
   border: 2px solid #fff; 
-  transition: all 0.3s ease; 
+  transition: all 0.5s ease; 
 }
 
 /* Map expands when hovered */
@@ -43,12 +43,12 @@ body {
 #pano.swapped {
   width: 15vw;
   height: 15vh;
-  position: absolute;
-  bottom: 20px; 
-  right: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: 2;
   border: 2px solid #fff;
-  transition: all 0.3s ease; /* Smooth transition */
+  transition: all 0.5s ease; /* Smooth transition */
 }
 
 #floating-panel {
