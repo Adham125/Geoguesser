@@ -25,7 +25,7 @@ async function initialize() {
   map.setOptions({ clickableIcons: false });
   map.addListener("click", (e) => {
     setMapOnAll(null);
-    placeMarker(e.latLng);
+    placeMarker(e.latLng, "FF6347");
   });
 
   confirmButton.addEventListener("click", confirmSelect);
@@ -89,13 +89,12 @@ class GameSessionStorage {
   }
 }
 
-function placeMarker(latLng) {
-  const markerNew = new google.maps.Marker({
+function placeMarker(latLng, colour) {
+  const markerNew = new google.maps.marker.AdvancedMarkerElement({
     position: latLng,
-    map,
-    clickable: false,
+    map: map, 
+    content: new google.maps.marker.PinElement({background: `#${colour}`,}).element,
   });
-
   markers.push(markerNew);
 }
 
@@ -115,11 +114,11 @@ function confirmSelect() {
     const pointsReturn = calculatePoints()
     const points = Math.floor(pointsReturn[0]);
     const distance = Math.floor(pointsReturn[1]);
-    placeMarker(location);
+    placeMarker(location, "00FF00");
     confirmButton.disabled = true;
     nextButton.disabled = false;
     alert(`You scored ${points}\nDistance to location was ${distance}Km`);
-    let bounds = new google.maps.LatLngBounds(location, markers[markers.length - 2].getPosition());
+    let bounds = new google.maps.LatLngBounds(location, markers[markers.length - 2].position);
     map.fitBounds(bounds);
   } else {
     alert("You need to select a location first!");
@@ -127,9 +126,9 @@ function confirmSelect() {
 }
 
 function calculatePoints() {
-  const markerPosition = markers[markers.length - 1].getPosition();
-  let lat = markerPosition?.lat();
-  let lng = markerPosition?.lng();
+  const markerPosition = markers[markers.length - 1].position;
+  let lat = markerPosition?.lat;
+  let lng = markerPosition?.lng;
   let distance = haversineDistance(location, lat, lng);
 
   const score = 5000 * Math.E ** (-10 * distance / 14916.862);

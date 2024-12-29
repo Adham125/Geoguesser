@@ -1,6 +1,6 @@
 {
-  "name": "hide-and-seek",
-  "description": "Geoguesser hide and seek game",
+  "name": "Geoguesser",
+  "description": "Geoguesser game",
   "version": "0.1",
   "files": [],
   "scripts": {
