@@ -1,4 +1,7 @@
 # Intro
+
+https://adham125.github.io/Geoguesser/
+
 This is a free singleplayer GeoGuesser game! You get dropped in a random location and have to guess where on the world map you are.
 
 Made by: [Adham125](https://github.com/Adham125)
@@ -23,7 +26,7 @@ Made by: [Adham125](https://github.com/Adham125)
 
 
 
-# Setup
+# Local Setup
 
 To download and run the code locally you will need to have [npm](https://nodejs.org/en/download) on your machine.
 
