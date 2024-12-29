@@ -41,13 +41,13 @@ async function initialize() {
       radius: Number(document.getElementById("myRange").value),
       sources: [google.maps.StreetViewSource.GOOGLE],
     };
-    console.log(document.getElementById("myRange").value)
 
     const sv = await streetViewService.getPanorama(request, (data, status) => {
       if (status === google.maps.StreetViewStatus.OK && data?.location) {
           streetView = new google.maps.StreetViewPanorama(document.getElementById("pano"), {
-          disableDefaultUI: true,
-          showRoadLabels: false,
+            heading: 0,
+            disableDefaultUI: true,
+            showRoadLabels: false,
         });
         streetView.setPano(data.location.pano);
         location = data.location.latLng;
