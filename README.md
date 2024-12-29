@@ -25,7 +25,7 @@ Made by: @Adham125
 
 # Setup
 
-To download and run the code locally you will need to have ""[npm](https://nodejs.org/en/download)"" on your machine.
+To download and run the code locally you will need to have [npm](https://nodejs.org/en/download) on your machine.
 
 ```sh
 npm i
