@@ -137,3 +137,28 @@ body {
   height: 150%;
 }
 
+/* Styling for the loading spinner */
+.loading-spinner {
+  border: 10px solid #f3f3f3; /* Light grey background */
+  border-top: 10px solid #3498db; /* Blue color for the spinning part */
+  border-radius: 50%; /* Make it round */
+  width: 50px; /* Size of the spinner */
+  height: 50px; /* Size of the spinner */
+  animation: spin 2s linear infinite; /* Animation for spinning */
+  position: absolute; /* Position it absolutely inside the parent container */
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust for exact centering */
+  display: none; /* Initially hidden */
+  z-index: 10;
+}
+
+/* Define the keyframe for the spinning animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

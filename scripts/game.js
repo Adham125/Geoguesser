@@ -59,11 +59,13 @@ async function initialize() {
     if (sv !== undefined) {
       break;
     } else {
+      document.getElementById('loading-spinner').style.display = 'block';  // Show spinner
       lat = Math.random() * (85 - -85) + -85;
       lng = Math.random() * (170 - -170) + -170;
     }
   }
 
+  document.getElementById('loading-spinner').style.display = 'none';
   streetView.addListener("pov_changed", () => {
     
     const heading = streetView.getPov().heading; // Get the current heading in degrees
