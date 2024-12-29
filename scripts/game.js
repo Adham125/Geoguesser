@@ -1,6 +1,9 @@
 let map;
+const mapcss = document.getElementById("map");
+const panocss = document.getElementById("pano");
 let streetView;
 let markers = [];
+let polyLine;
 let location = null;
 const confirmButton = document.getElementById("Confirm");
 const nextButton = document.getElementById("Next");
@@ -106,6 +109,8 @@ function setMapOnAll(map) {
 
 function nextRound() {
   confirmButton.disabled = false;
+  mapcss.classList.toggle("swapped");
+  panocss.classList.toggle("swapped");
   initialize();
 }
 
@@ -114,12 +119,29 @@ function confirmSelect() {
     const pointsReturn = calculatePoints()
     const points = Math.floor(pointsReturn[0]);
     const distance = Math.floor(pointsReturn[1]);
+
     placeMarker(location, "00FF00");
+
+    polyLine = new google.maps.Polyline({
+      path: [markers[markers.length-1].position, markers[markers.length-2].position],
+      geodesic: true,
+      strokeColor: "#FF0000",
+      strokeOpacity: 1.0, 
+      strokeWeight: 2 
+    });
+    polyLine.setMap(map); 
+
+    mapcss.classList.toggle("swapped");
+    panocss.classList.toggle("swapped");
+
     confirmButton.disabled = true;
     nextButton.disabled = false;
+
     alert(`You scored ${points}\nDistance to location was ${distance}Km`);
     let bounds = new google.maps.LatLngBounds(location, markers[markers.length - 2].position);
+    
     map.fitBounds(bounds);
+    map.setZoom(3);
   } else {
     alert("You need to select a location first!");
   }

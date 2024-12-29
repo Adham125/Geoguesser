@@ -30,6 +30,27 @@ body {
   height: 30vh; 
 }
 
+/* Swapped sizes */
+#map.swapped {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#pano.swapped {
+  width: 15vw;
+  height: 15vh;
+  position: absolute;
+  bottom: 20px; 
+  right: 20px;
+  z-index: 2;
+  border: 2px solid #fff;
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
 #floating-panel {
   position: absolute;
   top: 10px;
