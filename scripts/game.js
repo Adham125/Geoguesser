@@ -14,6 +14,10 @@ const slider = document.getElementById("myRange")
 updateTooltip();
 slider.addEventListener("input", updateTooltip);
 
+const back_button = document.getElementById('back-button').onclick = function() {
+  window.location.href = 'index.html';
+}
+
 async function initialize() {
   let lat = Math.random() * (85 - -85) + -85;
   let lng = Math.random() * (170 - -170) + -170;
@@ -48,6 +52,8 @@ async function initialize() {
       source = [google.maps.StreetViewSource.DEFAULT];
   }
 
+  var options = JSON.parse(localStorage.getItem("gameOptions"));
+
   while (true) {
     const request = {
       location: new google.maps.LatLng(lat, lng),
@@ -59,9 +65,11 @@ async function initialize() {
     const sv = await streetViewService.getPanorama(request, (data, status) => {
       if (status === google.maps.StreetViewStatus.OK && data?.location) {
           streetView = new google.maps.StreetViewPanorama(document.getElementById("pano"), {
-            heading: 0,
+            pov: { heading: 0, pitch: 0 },
             disableDefaultUI: true,
             showRoadLabels: false,
+            scrollwheel : options.zooming, 
+            clickToGo: options.moving,
         });
         streetView.setPano(data.location.pano);
         location = data.location.latLng;
@@ -78,7 +86,6 @@ async function initialize() {
 
   document.getElementById('loading-spinner').style.display = 'none';
   streetView.addListener("pov_changed", () => {
-    
     const heading = streetView.getPov().heading; // Get the current heading in degrees
     const compassImage = document.getElementById("compass-image");
     // Rotate the compass based on heading
@@ -126,8 +133,6 @@ function placeMarker(latLng, colour) {
       content: new google.maps.marker.PinElement({background: `#${colour}`,}).element,
     });
   }
-
-  
   markers.push(markerNew);
 }
 
@@ -220,21 +225,6 @@ function updateTooltip() {
   // Update tooltip position
   tooltip.style.left = `${thumbOffset}px`;
 }
-
-const styles = {
-  default: [],
-  hide: [
-    {
-      featureType: "labels.icons",
-      stylers: [{ visibility: "off" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "labels.icon",
-      stylers: [{ visibility: "off" }],
-    },
-  ],
-};
 
 window.initialize = async () => {
   initialize();

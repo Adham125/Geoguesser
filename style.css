@@ -33,8 +33,8 @@ body {
 /* Swapped sizes */
 #map.swapped {
   position: fixed;
-  top: 0;
-  left: 0;
+  bottom: 0;
+  right: 0;
   width: 100%;
   height: 100%;
   z-index: 1;
@@ -43,9 +43,9 @@ body {
 #pano.swapped {
   width: 15vw;
   height: 15vh;
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: absolute !important;
+  bottom: 0;
+  right: 0;
   z-index: 2;
   border: 2px solid #fff;
   transition: all 0.5s ease; /* Smooth transition */
@@ -161,4 +161,23 @@ body {
   100% {
     transform: rotate(360deg);
   }
+}
+
+#back-button {
+  position: fixed;
+  top: 10px;       /* Adjust the distance from the top */
+  left: 10px;      /* Adjust the distance from the left */
+  font-size: 18px; /* Adjust the text size */
+  color: #000000;     /* White text color (can be changed) */
+  text-decoration: none; /* Remove the underline */
+  font-weight: bold;  /* Optional: Make text bold */
+  background-color: transparent; /* No background */
+  border: none;     /* No border */
+  padding: 5px 10px; /* Padding around the text */
+  transition: color 0.3s ease; /* Smooth transition for hover effect */
+  z-index: 10;
+}
+
+#back-button:hover {
+  color: #ccc; /* Change color on hover */
 }

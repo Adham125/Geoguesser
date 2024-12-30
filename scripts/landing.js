@@ -16,7 +16,13 @@ startButton.addEventListener("click", function() {
     }else if(gamemode == "hard"){
         localStorage.setItem("gameMode", JSON.stringify("hard"));
     }
-    
+
+    const options = {
+        moving: document.getElementById("moving").checked,
+        zooming: document.getElementById("zooming").checked,
+    };
+    localStorage.setItem("gameOptions", JSON.stringify(options));
+
     window.location.href = 'pages/game.html';
 });
 
