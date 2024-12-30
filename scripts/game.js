@@ -15,7 +15,7 @@ updateTooltip();
 slider.addEventListener("input", updateTooltip);
 
 const back_button = document.getElementById('back-button').onclick = function() {
-  window.location.href = '/';
+  window.location.href = 'https://adham125.github.io/Geoguesser/';
 }
 
 async function initialize() {
