@@ -3,6 +3,7 @@ const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
 let streetView;
 let markers = [];
+let gamemode;
 let polyLine;
 let location = null;
 const confirmButton = document.getElementById("Confirm");
@@ -37,12 +38,22 @@ async function initialize() {
 
   const streetViewService = new google.maps.StreetViewService();
 
+  gamemode = JSON.parse(localStorage.getItem("gameMode"));
+  var source;
+  if(gamemode == "easy"){
+      source = [google.maps.StreetViewSource.GOOGLE];
+  }else if(gamemode == "medium"){
+      source = [google.maps.StreetViewSource.GOOGLE, google.maps.StreetViewSource.OUTDOOR];
+  }else if(gamemode == "hard"){
+      source = [google.maps.StreetViewSource.DEFAULT];
+  }
+
   while (true) {
     const request = {
       location: new google.maps.LatLng(lat, lng),
       preference: google.maps.StreetViewPreference.NEAREST,
       radius: Number(document.getElementById("myRange").value),
-      sources: [google.maps.StreetViewSource.GOOGLE],
+      sources: source,
     };
 
     const sv = await streetViewService.getPanorama(request, (data, status) => {
@@ -130,6 +141,7 @@ function nextRound() {
   confirmButton.disabled = false;
   mapcss.classList.toggle("swapped");
   panocss.classList.toggle("swapped");
+  markers = []
   initialize();
 }
 
@@ -157,9 +169,10 @@ function confirmSelect() {
     nextButton.disabled = false;
 
     alert(`You scored ${points}\nDistance to location was ${distance}Km`);
-    let bounds = new google.maps.LatLngBounds(location, markers[markers.length - 2].position);
+    let bounds = new google.maps.LatLngBounds(markers[markers.length - 1].position, markers[markers.length - 2].position);
     
     map.fitBounds(bounds);
+    //console.log(Math.ceil(distance/1000))
     map.setZoom(3);
   } else {
     alert("You need to select a location first!");

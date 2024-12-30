@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <title>GeoGuesser!</title>
+    <link rel="icon" href="../imgs/globe.png">
+    <link rel="stylesheet" type="text/css" href="../style.css" />
+    <script type="module" src="../scripts/game.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="pano">
+      <div class="loading-spinner" id="loading-spinner"></div>
+    </div>
+    
+    <div id="floating-panel">
+      <input id="Confirm" type="button" value="Confirm" />
+      <input id="Next" type="button" value="Next" />
+      <div class="slider-container">
+        <span id="slider-tooltip">500000</span>
+        <label id="sliderDesc">Search Range</label>
+        <label id="slider-min">100m</label>
+        <input type="range" min="100" max="1000000" value="500000" class="slider" id="myRange">
+        
+        <label id="slider-max">1000000m</label>
+      </div>
+    </div>
+    <div id="compass">
+      <img id="compass-image" src="../imgs/compass-icon.png" alt="Compass" />
+    </div>
+    
+    <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWNl6ZUIjiQJzPGpTiEEJLR8cwIskjmbI&libraries=marker&callback=initialize&v=weekly"
+      defer
+    ></script>
+  </body>
+</html>
