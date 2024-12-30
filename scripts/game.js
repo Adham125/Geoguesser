@@ -14,9 +14,6 @@ const slider = document.getElementById("myRange")
 updateTooltip();
 slider.addEventListener("input", updateTooltip);
 
-const back_button = document.getElementById('back-button').onclick = function() {
-  window.location.href = '../index.html';
-}
 
 async function initialize() {
   let lat = Math.random() * (85 - -85) + -85;
