@@ -1,6 +1,7 @@
 const startButton = document.getElementById("start-btn");
 const settingsButton = document.getElementById("settings-btn");
 const gameModeSelect = document.getElementById("game-mode");
+const roundsSelect = document.getElementById('rounds');
 var gamemode = gameModeSelect.value;
 
 localStorage.clear()
@@ -22,6 +23,9 @@ startButton.addEventListener("click", function() {
         zooming: document.getElementById("zooming").checked,
     };
     localStorage.setItem("gameOptions", JSON.stringify(options));
+
+    const rounds = roundsSelect.value;
+    localStorage.setItem("rounds", JSON.stringify(rounds));
 
     window.location.href = 'pages/game.html';
 });

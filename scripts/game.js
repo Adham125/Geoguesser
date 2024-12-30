@@ -14,6 +14,7 @@ const slider = document.getElementById("myRange")
 updateTooltip();
 slider.addEventListener("input", updateTooltip);
 
+const rounds = JSON.parse(localStorage.getItem("rounds"));
 
 async function initialize() {
   let lat = Math.random() * (85 - -85) + -85;
