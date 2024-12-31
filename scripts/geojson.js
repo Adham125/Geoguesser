@@ -37,7 +37,7 @@ export async function pickRandomPoint(geojson) {
         type: "Polygon",
         coordinates: polygonCoords
       };
-      return area(polygon); // Use named import
+      return turf.area(polygon); // Use named import
     });
 
     const totalSubArea = subPolygonAreas.reduce((sum, area) => sum + area, 0);
