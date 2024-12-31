@@ -1,3 +1,6 @@
+import { pickRandomPoint, loadGeoJSON } from './geojson.js';
+
+const geojsonFilePath = '/world.geojson';
 let map;
 const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
@@ -17,10 +20,6 @@ slider.addEventListener("input", updateTooltip);
 const rounds = JSON.parse(localStorage.getItem("rounds"));
 
 async function initialize() {
-  let lat = Math.random() * (85 - -85) + -85;
-  let lng = Math.random() * (170 - -170) + -170;
-
-  location = new google.maps.LatLng(lat, lng);
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
@@ -31,7 +30,7 @@ async function initialize() {
   map.setOptions({ clickableIcons: false });
   map.addListener("click", (e) => {
     setMapOnAll(null);
-    placeMarker(e.latLng, "FF6347");
+    placeMarker(e.latLng);
   });
 
   confirmButton.addEventListener("click", confirmSelect);
@@ -42,20 +41,35 @@ async function initialize() {
 
   gamemode = JSON.parse(localStorage.getItem("gameMode"));
   var source;
+  var pref;
   if(gamemode == "easy"){
       source = [google.maps.StreetViewSource.GOOGLE];
+      pref = google.maps.StreetViewPreference.BEST;
   }else if(gamemode == "medium"){
       source = [google.maps.StreetViewSource.GOOGLE, google.maps.StreetViewSource.OUTDOOR];
+      pref = google.maps.StreetViewPreference.NEAREST;
   }else if(gamemode == "hard"){
       source = [google.maps.StreetViewSource.DEFAULT];
+      pref = google.maps.StreetViewPreference.NEAREST;
   }
 
   var options = JSON.parse(localStorage.getItem("gameOptions"));
 
   while (true) {
+    try {
+      var geojson = await loadGeoJSON(geojsonFilePath); // Load the GeoJSON
+      const temp = await pickRandomPoint(geojson); // Get a random point
+      var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[0], lng: temp.geometry.coordinates[1]});
+  
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  
+    location = randomPoint
+
     const request = {
-      location: new google.maps.LatLng(lat, lng),
-      preference: google.maps.StreetViewPreference.NEAREST,
+      location: location,
+      preference: pref,
       radius: Number(document.getElementById("myRange").value),
       sources: source,
     };
@@ -74,12 +88,10 @@ async function initialize() {
       }
     });
     if (sv !== undefined) {
+      console.log(location.lat(), location.lng())
       break;
-    } else {
-      document.getElementById('loading-spinner').style.display = 'block';  // Show spinner
-      lat = Math.random() * (85 - -85) + -85;
-      lng = Math.random() * (170 - -170) + -170;
-    }
+    } 
+    document.getElementById('loading-spinner').style.display = 'block';  // Show spinner
   }
 
   document.getElementById('loading-spinner').style.display = 'none';
@@ -88,7 +100,7 @@ async function initialize() {
     const compassImage = document.getElementById("compass-image");
     // Rotate the compass based on heading
     compassImage.style.transform = `rotate(${heading}deg)`;
-});
+  });
 }
 
 class GameSessionStorage {
@@ -110,7 +122,7 @@ class GameSessionStorage {
   }
 }
 
-function placeMarker(latLng, colour) {
+function placeMarker(latLng, colour = "FF6347") {
   let markerNew;
   if (colour == "00FF00"){
     const img = document.createElement("img");
