@@ -1,6 +1,6 @@
 import { pickRandomPoint, loadGeoJSON } from './geojson.js';
 
-const geojsonFilePath = '/world.geojson';
+const geojsonFilePath = '../public/world.geojson';
 let map;
 const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
