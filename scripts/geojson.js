@@ -1,4 +1,4 @@
-import { area, bbox, randomPoint, booleanPointInPolygon } from '@turf/turf';
+import { area, bbox, randomPoint, booleanPointInPolygon } from '../node_modules/@turf/turf';
 
 export async function pickRandomPoint(geojson) {
   const features = geojson.features;
