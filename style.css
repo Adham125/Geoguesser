@@ -1,8 +1,10 @@
 html,
 body {
+  font-family: Arial, sans-serif;
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 /* Street View pane */
@@ -10,6 +12,7 @@ body {
   height: 100%;
   width: 100%;
   z-index: 1;
+  transition: all 0.5s ease; 
 }
 
 /* Map overlay in the bottom-right corner */
@@ -49,6 +52,11 @@ body {
   z-index: 2;
   border: 2px solid #fff;
   transition: all 0.5s ease; /* Smooth transition */
+}
+
+#pano.hidden {
+  opacity: 0; /* Fully hidden */
+  pointer-events: none; /* Prevent interaction when hidden */
 }
 
 #floating-panel {
@@ -180,4 +188,60 @@ body {
 
 #back-button:hover {
   color: #ccc; /* Change color on hover */
+}
+
+.scores-menu {
+  position: fixed;
+  top: -100%; /* Start offscreen */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 400px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: left;
+  z-index: 1000;
+  transition: top 0.5s ease;
+}
+
+.scores-menu h2 {
+  margin-top: 0;
+}
+
+.scores-menu.hidden {
+  top: -100%; /* Hide the menu offscreen */
+}
+
+.scores-menu.visible {
+  top: 20px; /* Slide the menu into view */
+}
+
+button,
+a.actionButton {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4285f4;
+  color: white;
+  text-decoration: none; /* Remove underline from anchor */
+  cursor: pointer;
+}
+
+button:hover,
+a.actionButton:hover {
+  background-color: #357ae8;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Space between the buttons */
+}
+
+a.actionButton {
+  display: inline-block; /* Ensure the anchor tag behaves like a button */
 }

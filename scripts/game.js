@@ -9,15 +9,25 @@ let markers = [];
 let gamemode;
 let polyLine;
 let location = null;
+
 const confirmButton = document.getElementById("Confirm");
 const nextButton = document.getElementById("Next");
+const closeButton = document.getElementById("closeButton");
+  closeButton.addEventListener("click", closeScoresMenu);
 
 const tooltip = document.getElementById("slider-tooltip");
 const slider = document.getElementById("myRange")
 updateTooltip();
 slider.addEventListener("input", updateTooltip);
 
-const rounds = JSON.parse(localStorage.getItem("rounds"));
+var roundsMax = JSON.parse(localStorage.getItem("rounds"));
+var currentRound = 1;
+//localStorage.setItem("roundsResults", "")
+var scoresMenu = document.getElementById("scoresMenu");
+var scoresList = document.getElementById("scoresList");
+
+var score;
+var distance;
 
 async function initialize() {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
@@ -88,7 +98,7 @@ async function initialize() {
       }
     });
     if (sv !== undefined) {
-      console.log(location.lat(), location.lng())
+      //console.log(location.lat(), location.lng())
       break;
     } 
     document.getElementById('loading-spinner').style.display = 'block';  // Show spinner
@@ -103,33 +113,14 @@ async function initialize() {
   });
 }
 
-class GameSessionStorage {
-  static saveRoundResults(roundId, results) {
-    sessionStorage.setItem(`round_${roundId}`, JSON.stringify(results));
-  }
-
-  static getRoundResults(roundId) {
-    const data = sessionStorage.getItem(`round_${roundId}`);
-    return data ? JSON.parse(data) : null;
-  }
-
-  static clearRoundResults(roundId) {
-    sessionStorage.removeItem(`round_${roundId}`);
-  }
-
-  static clearAllRounds() {
-    sessionStorage.clear();
-  }
-}
-
 function placeMarker(latLng, colour = "FF6347") {
   let markerNew;
   if (colour == "00FF00"){
     const img = document.createElement("img");
     img.src = "../imgs/red-flag.png";
-    img.style.width = "60px"; // Adjust the size as needed
-    img.style.height = "40px"; // Adjust the size as needed
-    img.style.pointerEvents = "none"; // Ensures the image doesn't interfere with user interactions
+    img.style.width = "60px"; 
+    img.style.height = "40px"; 
+    img.style.pointerEvents = "none"; 
 
     markerNew = new google.maps.marker.AdvancedMarkerElement({
       position: latLng,
@@ -153,18 +144,52 @@ function setMapOnAll(map) {
 }
 
 function nextRound() {
-  confirmButton.disabled = false;
-  mapcss.classList.toggle("swapped");
-  panocss.classList.toggle("swapped");
-  markers = []
-  initialize();
+  currentRound++;
+  if (currentRound > roundsMax){
+    panocss.classList.toggle("hidden")
+    markers = []
+    nextButton.disabled = true
+
+    const scoresData = JSON.parse(localStorage.getItem("roundsResults"))
+    scoresList.innerHTML = ""; // Clear existing scores
+    for (let i=1; i <= roundsMax; i++){
+      let dataAll = JSON.parse(localStorage.getItem("roundsResults"))
+      let data = dataAll[`round${i}`]
+      const li = document.createElement("li");
+      li.textContent = `Round ${i}: ${data.score} points  |  ${data.distance} km`;
+      scoresList.appendChild(li);
+
+      placeMarker(data.location, "00FF00");
+      placeMarker(data.guess);
+
+      polyLine = new google.maps.Polyline({
+        path: [data.guess, data.location],
+        geodesic: true,
+        strokeColor: "#FF0000",
+        strokeOpacity: 1.0, 
+        strokeWeight: 2 
+      });
+      polyLine.setMap(map);
+    }
+
+    // Show the menu
+    scoresMenu.classList.remove("hidden");
+    scoresMenu.classList.add("visible");
+
+  }else{
+    confirmButton.disabled = false;
+    mapcss.classList.toggle("swapped");
+    panocss.classList.toggle("swapped");
+    markers = []
+    initialize();
+  }
 }
 
 function confirmSelect() {
   if (markers.length > 0) {
     const pointsReturn = calculatePoints()
-    const points = Math.floor(pointsReturn[0]);
-    const distance = Math.floor(pointsReturn[1]);
+    score = Math.floor(pointsReturn[0]);
+    distance = Math.floor(pointsReturn[1]);
 
     placeMarker(location, "00FF00");
 
@@ -183,7 +208,21 @@ function confirmSelect() {
     confirmButton.disabled = true;
     nextButton.disabled = false;
 
-    alert(`You scored ${points}\nDistance to location was ${distance}Km`);
+    let results = localStorage.getItem("roundsResults")
+    let resultsParsed = {};
+    if (results){
+      resultsParsed = JSON.parse(results)
+    }
+
+    resultsParsed[`round${currentRound}`] = {
+      "guess": markers[markers.length-2].position, 
+      "location": location,
+      "score": score,
+      "distance": distance
+    }
+    localStorage.setItem(`roundsResults`, JSON.stringify(resultsParsed));
+
+    alert(`You scored ${score}\nDistance to location was ${distance}Km`);
     let bounds = new google.maps.LatLngBounds(markers[markers.length - 1].position, markers[markers.length - 2].position);
     
     map.fitBounds(bounds);
@@ -234,6 +273,11 @@ function updateTooltip() {
 
   // Update tooltip position
   tooltip.style.left = `${thumbOffset}px`;
+}
+
+function closeScoresMenu(){
+  scoresMenu.classList.remove("visible");
+  scoresMenu.classList.add("hidden");
 }
 
 window.initialize = async () => {

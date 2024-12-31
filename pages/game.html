@@ -17,16 +17,27 @@
       <input id="Confirm" type="button" value="Confirm" />
       <input id="Next" type="button" value="Next" />
       <div class="slider-container">
-        <span id="slider-tooltip">500000</span>
+        <span id="slider-tooltip">200000</span>
         <label id="sliderDesc">Search Range</label>
         <label id="slider-min">100m</label>
-        <input type="range" min="100" max="1000000" value="500000" class="slider" id="myRange">
+        <input type="range" min="100" max="1000000" value="200000" class="slider" id="myRange">
         
         <label id="slider-max">1000000m</label>
       </div>
     </div>
     <div id="compass">
       <img id="compass-image" src="../imgs/compass-icon.png" alt="Compass" />
+    </div>
+
+    <div id="scoresMenu" class="scores-menu hidden">
+      <h2>Game Scores</h2>
+      <ul id="scoresList">
+        <!-- Scores will be dynamically added here -->
+      </ul>
+      <div class="button-group">
+        <button id="closeButton" class="actionButton">Close</button>
+        <a href="/" id="homeButton" class="actionButton">Home</a>
+      </div>
     </div>
     
     <script
