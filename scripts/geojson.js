@@ -1,12 +1,10 @@
-import { area, bbox, randomPoint, booleanPointInPolygon } from 'https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js';
-
 export async function pickRandomPoint(geojson) {
   const features = geojson.features;
 
   const areas = features.map(feature => {
     const geometry = feature.geometry;
     if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-      return area(feature); // Use named import
+      return turf.area(feature); // Use named import
     }
     return 0; // Ignore non-polygon geometries
   });
@@ -71,9 +69,9 @@ export async function pickRandomPoint(geojson) {
 
 function getRandomPointInPolygon(polygon) {
   while (true) {
-    const bboxCoords = bbox(polygon); // Use named import
-    const randomPointResult = randomPoint(1, { bbox: bboxCoords }).features[0]; // Use named import
-    if (booleanPointInPolygon(randomPointResult, polygon)) { // Use named import
+    const bboxCoords = turf.bbox(polygon); // Use named import
+    const randomPointResult = turf.randomPoint(1, { bbox: bboxCoords }).features[0]; // Use named import
+    if (turf.booleanPointInPolygon(randomPointResult, polygon)) { // Use named import
       return randomPointResult;
     }
   }
