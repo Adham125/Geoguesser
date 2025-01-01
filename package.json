@@ -7,7 +7,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build --outDir dist --base './'",
-    "test": "tsc --no-emit",
+    "test": "tsc --noEmit",
     "preview": "vite preview"
   },
   "devDependencies": {

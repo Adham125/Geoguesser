@@ -1,0 +1,5 @@
+title: My Website
+description: A GitHub Pages site
+url: "https://Adham125.github.io"
+baseurl: "/Geoguesser" 
+theme: jekyll-theme-minimal 
