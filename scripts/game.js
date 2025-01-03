@@ -54,6 +54,7 @@ async function initialize() {
   gamemode = JSON.parse(localStorage.getItem("gameMode"));
   var source;
   var pref;
+  var countryISO = null;
   if(gamemode == "classic"){
       source = [google.maps.StreetViewSource.GOOGLE];
       pref = google.maps.StreetViewPreference.BEST;
@@ -70,7 +71,7 @@ async function initialize() {
   }
 
   var options = JSON.parse(localStorage.getItem("gameOptions"));
-  var countryISO = null;
+  
   while (true) {
     try {
       let temp = await pickRandomPoint(countryISO); // Get a random point
