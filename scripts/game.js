@@ -1,6 +1,6 @@
 import { pickRandomPoint, loadGeoJSON } from './geojson.js';
 
-const geojsonFilePath = '../world.geojson';
+const geojsonFilePath = '../geojson/world.geojson';
 let map;
 const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
@@ -15,10 +15,12 @@ const nextButton = document.getElementById("Next");
 const closeButton = document.getElementById("closeButton");
   closeButton.addEventListener("click", closeScoresMenu);
 
-const tooltip = document.getElementById("slider-tooltip");
-const slider = document.getElementById("myRange")
-updateTooltip();
-slider.addEventListener("input", updateTooltip);
+//const tooltip = document.getElementById("slider-tooltip");
+//const slider = document.getElementById("myRange")
+//updateTooltip();
+//slider.addEventListener("input", updateTooltip);
+
+const countrySelect = document.getElementById("country-select");
 
 var roundsMax = JSON.parse(localStorage.getItem("rounds"));
 var currentRound = 1;
@@ -52,7 +54,7 @@ async function initialize() {
   gamemode = JSON.parse(localStorage.getItem("gameMode"));
   var source;
   var pref;
-  if(gamemode == "easy"){
+  if(gamemode == "classic"){
       source = [google.maps.StreetViewSource.GOOGLE];
       pref = google.maps.StreetViewPreference.BEST;
   }else if(gamemode == "medium"){
@@ -61,15 +63,20 @@ async function initialize() {
   }else if(gamemode == "hard"){
       source = [google.maps.StreetViewSource.DEFAULT];
       pref = google.maps.StreetViewPreference.NEAREST;
+  }else if (gamemode == "countrySelect"){
+    source = [google.maps.StreetViewSource.GOOGLE];
+    pref = google.maps.StreetViewPreference.BEST;
+    countryISO = JSON.parse(localStorage.getItem("selectedCountry"))
   }
 
   var options = JSON.parse(localStorage.getItem("gameOptions"));
-
+  var countryISO = null;
   while (true) {
     try {
-      var geojson = await loadGeoJSON(geojsonFilePath); // Load the GeoJSON
-      const temp = await pickRandomPoint(geojson); // Get a random point
-      var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[0], lng: temp.geometry.coordinates[1]});
+      let temp = await pickRandomPoint(countryISO); // Get a random point
+      console.log(countryISO)
+      temp = temp[0]
+      var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
   
     } catch (error) {
       console.error('Error:', error.message);
@@ -80,7 +87,7 @@ async function initialize() {
     const request = {
       location: location,
       preference: pref,
-      radius: Number(document.getElementById("myRange").value),
+      radius: Number(1000),          // <---------- SEARCH RADIUS
       sources: source,
     };
 

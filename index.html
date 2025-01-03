@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Game Landing Page</title>
   <link rel="stylesheet" href="stylesLanding.css">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9189530511783738"
+     crossorigin="anonymous"></script>
+
 </head>
 <body>
 
@@ -17,10 +21,16 @@
     <div class="game-mode-selection">
       <h2>Select Game Mode</h2>
       <select id="game-mode">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
+        <option value="classic">Classic</option>
+        <!--<option value="medium">Medium</option>
+        <option value="hard">Hard</option>-->
+        <option value="countrySelect">Country Select</option>
       </select>
+
+      <div id="country-select-container" style="display: none; margin-top: 10px;">
+        <label for="country-select">Select a Country:</label>
+        <select id="country-select"></select>
+      </div>
       
       <h3>Game Control Options:</h3>
       <div>
