@@ -98,3 +98,16 @@ body {
   #rounds:hover {
     cursor: pointer; /* Change cursor to pointer when hovering over the dropdown */
   }
+
+  .blurry-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('imgs/worldmap.png');
+    background-size: cover; /* Ensures the image covers the entire background */
+    background-position: center; /* Centers the image */
+    filter: blur(8px); /* Adjust the blur intensity */
+    z-index: -1; /* Places the background behind other content */
+}
