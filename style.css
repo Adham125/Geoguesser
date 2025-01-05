@@ -29,8 +29,8 @@ body {
 
 /* Map expands when hovered */
 #map:hover {
-  width: 60vw; 
-  height: 60vh; 
+  width: 70vw; 
+  height: 40vh; 
 }
 
 /* Swapped sizes */

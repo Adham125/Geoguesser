@@ -301,7 +301,6 @@ export async function pickRandomPoint(countryISOName) {
   }
 
   const country = await loadGeoJSON(`../geojson/${countryISO}.geojson`);
-  console.log(country)
   
   var selectedPolygon;
   const geometry = country.geometry;
@@ -322,7 +321,7 @@ export async function pickRandomPoint(countryISOName) {
 
     // Calculate the probability for each polygon based on area
     const probabilities = areas.map(area => area / totalArea);
-    console.log(probabilities)
+
     // Randomly choose a polygon based on its relative area
     const randomChoice = Math.random();
     let cumulativeProbability = 0;
