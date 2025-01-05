@@ -75,7 +75,7 @@ async function initialize() {
   while (true) {
     try {
       let temp = await pickRandomPoint(countryISO); // Get a random point
-      console.log(countryISO)
+      //console.log(countryISO)
       temp = temp[0]
       var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
   

@@ -301,8 +301,9 @@ export async function pickRandomPoint(countryISOName) {
   }
 
   const country = await loadGeoJSON(`../geojson/${countryISO}.geojson`);
+  console.log(country)
   
-  var selectedPolygon = [];
+  var selectedPolygon;
   const geometry = country.geometry;
 
   // Check if it's a single polygon or multi-polygon
@@ -315,21 +316,22 @@ export async function pickRandomPoint(countryISOName) {
     
     // Calculate the area for each polygon
     const areas = polygons.map(polygon => turf.area(polygon));
-    
+
     // Calculate total area
     const totalArea = areas.reduce((sum, area) => sum + area, 0);
-    
+
     // Calculate the probability for each polygon based on area
     const probabilities = areas.map(area => area / totalArea);
-    
+    console.log(probabilities)
     // Randomly choose a polygon based on its relative area
     const randomChoice = Math.random();
     let cumulativeProbability = 0;
-    
+
     for (let i = 0; i < polygons.length; i++) {
       cumulativeProbability += probabilities[i];
       if (randomChoice <= cumulativeProbability) {
         selectedPolygon = polygons[i];
+        break
       }
     }
   } else {
@@ -337,7 +339,7 @@ export async function pickRandomPoint(countryISOName) {
   }
   
   const randomPointResult = getRandomPointInPolygon(selectedPolygon);
-  console.log(randomPointResult.geometry.coordinates)
+  //console.log(randomPointResult.geometry.coordinates)
   return [randomPointResult, countryISO];
 }
 

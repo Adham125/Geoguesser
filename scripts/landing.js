@@ -97,6 +97,8 @@ var countries = [
     { name: "Viet Nam", iso3: "VNM" }
   ];
 
+roundsSelect.value = "99999"
+
 document.getElementById("game-mode").addEventListener("change", function () {
     const countrySelectContainer = document.getElementById("country-select-container");
     if (this.value === "countrySelect") {
