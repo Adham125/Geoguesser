@@ -6,7 +6,6 @@ const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
 let streetView;
 let markers = [];
-let gamemode;
 let polyLine;
 let location = null;
 
@@ -31,6 +30,9 @@ var scoresList = document.getElementById("scoresList");
 var score;
 var distance;
 
+var gamemode = JSON.parse(localStorage.getItem("gameMode"));
+var polygon;
+
 async function initialize() {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
@@ -51,7 +53,7 @@ async function initialize() {
 
   const streetViewService = new google.maps.StreetViewService();
 
-  gamemode = JSON.parse(localStorage.getItem("gameMode"));
+  
   var source;
   var pref;
   var countryISO = null;
@@ -75,7 +77,7 @@ async function initialize() {
   while (true) {
     try {
       let temp = await pickRandomPoint(countryISO); // Get a random point
-      //console.log(countryISO)
+      polygon = temp[2]
       temp = temp[0]
       var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
   
@@ -193,9 +195,9 @@ function nextRound() {
   }
 }
 
-function confirmSelect() {
+async function confirmSelect() {
   if (markers.length > 0) {
-    const pointsReturn = calculatePoints()
+    const pointsReturn = await calculatePoints()
     score = Math.floor(pointsReturn[0]);
     distance = Math.floor(pointsReturn[1]);
 
@@ -241,24 +243,33 @@ function confirmSelect() {
   }
 }
 
-function calculatePoints() {
+async function calculatePoints(area = 14916.862) {
   const markerPosition = markers[markers.length - 1].position;
   let lat = markerPosition?.lat;
   let lng = markerPosition?.lng;
-  let distance = haversineDistance(location, lat, lng);
+  let distance = haversineDistance(location.lat(), location.lng(), lat, lng);
+  let score;
+  let coords = turf.bbox(polygon.geometry)
 
-  const score = 5000 * Math.E ** (-10 * distance / 14916.862);
+  if(gamemode == "countrySelect"){
+    area = haversineDistance(coords[0],coords[1], coords[2], coords[3])
+    score = 5000 * Math.E ** (-10 * distance / area);
+    }else{
+    score = 5000 * Math.E ** (-10 * distance / area);
+  }
+
+  
   return [score,distance];
 }
 
-const haversineDistance = (latlng, lat2, lon2) => {
+const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
   const toRadians = (degrees) => degrees * (Math.PI / 180);
 
-  const φ1 = toRadians(latlng.lat());
+  const φ1 = toRadians(lat1);
   const φ2 = toRadians(lat2);
-  const Δφ = toRadians(lat2 - latlng.lat());
-  const Δλ = toRadians(lon2 - latlng.lng());
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
 
   const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
             Math.cos(φ1) * Math.cos(φ2) *

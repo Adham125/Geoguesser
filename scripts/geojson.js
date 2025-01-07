@@ -304,10 +304,10 @@ export async function pickRandomPoint(countryISOName) {
   
   var selectedPolygon;
   const geometry = country.geometry;
-
+  var polygon;
   // Check if it's a single polygon or multi-polygon
   if (geometry.type === 'Polygon') {
-    const polygon = turf.polygon(geometry.coordinates);
+    polygon = turf.polygon(geometry.coordinates);
     selectedPolygon = polygon;
   } else if (geometry.type === 'MultiPolygon') {
     // Calculate the area of each sub-polygon
@@ -339,7 +339,7 @@ export async function pickRandomPoint(countryISOName) {
   
   const randomPointResult = getRandomPointInPolygon(selectedPolygon);
   //console.log(randomPointResult.geometry.coordinates)
-  return [randomPointResult, countryISO];
+  return [randomPointResult, countryISO, polygon];
 }
 
 function getRandomPointInPolygon(polygon) {
