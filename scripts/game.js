@@ -155,15 +155,15 @@ function setMapOnAll(map) {
 
 function nextRound() {
   currentRound++;
-  if (currentRound > roundsMax){
+  if (currentRound > roundsMax){             // End of Game Logic
     panocss.classList.toggle("hidden")
     markers = []
     nextButton.disabled = true
-
-    const scoresData = JSON.parse(localStorage.getItem("roundsResults"))
+    var allCoords = []
+    var dataAll = JSON.parse(localStorage.getItem("roundsResults"))
     scoresList.innerHTML = ""; // Clear existing scores
-    for (let i=1; i <= roundsMax; i++){
-      let dataAll = JSON.parse(localStorage.getItem("roundsResults"))
+    for (let i=1; i <= roundsMax; i++){                                 
+      
       let data = dataAll[`round${i}`]
       const li = document.createElement("li");
       li.textContent = `Round ${i}: ${data.score} points  |  ${data.distance} km`;
@@ -171,6 +171,8 @@ function nextRound() {
 
       placeMarker(data.location, "00FF00");
       placeMarker(data.guess);
+
+      allCoords.push(data.location, data.guess)
 
       polyLine = new google.maps.Polyline({
         path: [data.guess, data.location],
@@ -181,12 +183,14 @@ function nextRound() {
       });
       polyLine.setMap(map);
     }
+    let bounds = calculateLatLngBounds(allCoords)
+    map.fitBounds(bounds)
 
     // Show the menu
     scoresMenu.classList.remove("hidden");
     scoresMenu.classList.add("visible");
 
-  }else{
+  }else{                              // Next Round Logic
     confirmButton.disabled = false;
     mapcss.classList.toggle("swapped");
     panocss.classList.toggle("swapped");
@@ -231,13 +235,13 @@ async function confirmSelect() {
       "distance": distance
     }
     localStorage.setItem(`roundsResults`, JSON.stringify(resultsParsed));
+    //{lat: -85, lng: -170}
+    let bounds = calculateLatLngBounds([markers[markers.length - 1].position, markers[markers.length - 2].position]);
 
-    alert(`You scored ${score}\nDistance to location was ${distance}Km`);
-    let bounds = new google.maps.LatLngBounds(markers[markers.length - 1].position, markers[markers.length - 2].position);
-    
     map.fitBounds(bounds);
-    //console.log(Math.ceil(distance/1000))
-    map.setZoom(3);
+    
+    alert(`You scored ${score}\nDistance to location was ${distance}Km`);
+    
   } else {
     alert("You need to select a location first!");
   }
@@ -279,6 +283,25 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const distance = R * c;
   return distance;
 };
+
+function calculateLatLngBounds(coords) {
+  // Create a LatLngBounds object
+  const bounds = new google.maps.LatLngBounds();
+
+  // Add each coordinate to the bounds
+  coords.forEach(coord => {
+      // Support both [lat, lng] and { lat, lng } formats
+      if (Array.isArray(coord)) {
+          bounds.extend(new google.maps.LatLng(coord[0], coord[1]));
+      } else if (typeof coord === 'object' && 'lat' in coord && 'lng' in coord) {
+          bounds.extend(new google.maps.LatLng(coord.lat, coord.lng));
+      } else {
+          throw new Error("Invalid coordinate format");
+      }
+  });
+
+  return bounds;
+}
 
 function updateTooltip() {
   const sliderValue = slider.value;

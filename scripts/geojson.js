@@ -333,6 +333,8 @@ export async function pickRandomPoint(countryISOName) {
         break
       }
     }
+
+    polygon = selectedPolygon
   } else {
     throw new Error("Unsupported geometry type");
   }
