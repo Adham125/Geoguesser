@@ -91,6 +91,7 @@ var countries = [
     { name: "Turkey", iso3: "TUR" },
     { name: "Uganda", iso3: "UGA" },
     { name: "Ukraine", iso3: "UKR" },
+    { name: "United Arab Emirates", iso3: "ARE" },
     { name: "United Kingdom", iso3: "GBR" },
     { name: "United States", iso3: "USA" },
     { name: "Uruguay", iso3: "URY" },
