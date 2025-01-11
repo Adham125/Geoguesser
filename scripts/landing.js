@@ -7,7 +7,6 @@ var gamemode = gameModeSelect.value;
 localStorage.clear()
 
 var countries = [
-    { name: "Afghanistan", iso3: "AFG" },
     { name: "Albania", iso3: "ALB" },
     { name: "Andorra", iso3: "AND" },
     { name: "Argentina", iso3: "ARG" },
