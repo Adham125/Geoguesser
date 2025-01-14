@@ -40,5 +40,6 @@ To download and run the code locally you will need to have <!-- [npm](https://no
 
 ```sh
 gem install bundler jekyll
+bundle install
 bundle exec jekyll serve 
 ```
