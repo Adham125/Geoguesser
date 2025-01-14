@@ -13,17 +13,16 @@ const confirmButton = document.getElementById("Confirm");
 const nextButton = document.getElementById("Next");
 const closeButton = document.getElementById("closeButton");
   closeButton.addEventListener("click", closeScoresMenu);
+const startPosButton = document.getElementById("Start_Location");
+  startPosButton.addEventListener("click", returnToStart)
 
 //const tooltip = document.getElementById("slider-tooltip");
 //const slider = document.getElementById("myRange")
 //updateTooltip();
 //slider.addEventListener("input", updateTooltip);
 
-const countrySelect = document.getElementById("country-select");
-
 var roundsMax = JSON.parse(localStorage.getItem("rounds"));
 var currentRound = 1;
-//localStorage.setItem("roundsResults", "")
 var scoresMenu = document.getElementById("scoresMenu");
 var scoresList = document.getElementById("scoresList");
 
@@ -118,8 +117,7 @@ async function initialize() {
   streetView.addListener("pov_changed", () => {
     const heading = streetView.getPov().heading; // Get the current heading in degrees
     const compassImage = document.getElementById("compass-image");
-    // Rotate the compass based on heading
-    compassImage.style.transform = `rotate(${heading}deg)`;
+    compassImage.style.transform = `rotate(${heading}deg)`;  // Rotate the compass based on heading
   });
 }
 
@@ -301,6 +299,13 @@ function calculateLatLngBounds(coords) {
   });
 
   return bounds;
+}
+
+function returnToStart() {
+  console.log(streetView)
+  let loc = new google.maps.LatLng(location)
+  streetView.setPosition(loc)
+  streetView.setPov({ heading: 0, pitch: 0 })
 }
 
 function updateTooltip() {
