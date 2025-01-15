@@ -1,7 +1,8 @@
 import { pickRandomPoint, loadGeoJSON } from './geojson.js';
 
 const geojsonFilePath = '../geojson/world.geojson';
-let map;
+var map;
+var clickListener;
 const mapcss = document.getElementById("map");
 const panocss = document.getElementById("pano");
 let streetView;
@@ -41,7 +42,7 @@ async function initialize() {
     mapId: "1b65baa89de7a1e3",
   });
   map.setOptions({ clickableIcons: false });
-  map.addListener("click", (e) => {
+  clickListener = map.addListener("click", (e) => {
     setMapOnAll(null);
     placeMarker(e.latLng);
   });
@@ -219,6 +220,8 @@ async function confirmSelect() {
 
     confirmButton.disabled = true;
     nextButton.disabled = false;
+
+    google.maps.event.removeListener(clickListener);
 
     let results = localStorage.getItem("roundsResults")
     let resultsParsed = {};

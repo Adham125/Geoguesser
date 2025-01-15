@@ -236,6 +236,14 @@ a.actionButton:hover {
   background-color: #357ae8;
 }
 
+button:disabled,
+a.actionButton.disabled {
+  background-color: #cccccc; /* Light gray background */
+  color: #666666; /* Gray text */
+  cursor: not-allowed; /* Show "not allowed" cursor */
+  pointer-events: none; /* Prevent hover effects on disabled links */
+}
+
 .button-group {
   display: flex;
   justify-content: center;
