@@ -16,11 +16,8 @@ const closeButton = document.getElementById("closeButton");
   closeButton.addEventListener("click", closeScoresMenu);
 const startPosButton = document.getElementById("Start_Location");
   startPosButton.addEventListener("click", returnToStart)
+const timer = document.getElementById("timer");
 
-//const tooltip = document.getElementById("slider-tooltip");
-//const slider = document.getElementById("myRange")
-//updateTooltip();
-//slider.addEventListener("input", updateTooltip);
 
 var roundsMax = JSON.parse(localStorage.getItem("rounds"));
 var currentRound = 1;
@@ -32,6 +29,16 @@ var distance;
 
 var gamemode = JSON.parse(localStorage.getItem("gameMode"));
 var polygon;
+
+var options = JSON.parse(localStorage.getItem("gameOptions"));
+var totalSeconds = JSON.parse(localStorage.getItem("timer"))
+var timerInterval;
+
+if (options.timer) {
+  resetTimer()
+}else{
+  timer.style.display = "none"
+}
 
 async function initialize() {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
@@ -47,7 +54,10 @@ async function initialize() {
     placeMarker(e.latLng);
   });
 
-  confirmButton.addEventListener("click", confirmSelect);
+  confirmButton.addEventListener("click", async function(event) {
+    event.preventDefault(); 
+    await confirmSelect(false);
+  });
   nextButton.addEventListener("click", nextRound);
   nextButton.disabled = true;
 
@@ -71,8 +81,6 @@ async function initialize() {
     pref = google.maps.StreetViewPreference.BEST;
     countryISO = JSON.parse(localStorage.getItem("selectedCountry"))
   }
-
-  var options = JSON.parse(localStorage.getItem("gameOptions"));
   
   while (true) {
     try {
@@ -152,6 +160,29 @@ function setMapOnAll(map) {
   }
 }
 
+function updateTimer() {
+  if (totalSeconds <= 0) {            // End of timer logic
+    clearInterval(timerInterval);
+    //confirmSelect(true)
+    return;
+  }
+
+  totalSeconds--; // Decrease the timer by 1 second
+
+  let minutes = Math.floor(totalSeconds / 60);
+  let seconds = totalSeconds % 60;
+
+  // Format the time as MM:SS
+  let formattedTime = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  timer.textContent = formattedTime;
+}
+
+function resetTimer () {
+  totalSeconds = JSON.parse(localStorage.getItem("timer"))
+  timerInterval = setInterval(updateTimer, 1000);
+  timer.style.display = 'block';
+}
+
 function nextRound() {
   currentRound++;
   if (currentRound > roundsMax){             // End of Game Logic
@@ -194,14 +225,25 @@ function nextRound() {
     mapcss.classList.toggle("swapped");
     panocss.classList.toggle("swapped");
     markers = []
+    resetTimer()
     initialize();
   }
 }
 
-async function confirmSelect() {
+async function confirmSelect(timedOut) {
   if (markers.length > 0) {
+    clearInterval(timerInterval)
+    timer.style.display = 'none';
+
     const pointsReturn = await calculatePoints()
-    score = Math.floor(pointsReturn[0]);
+    let score;
+    
+    if (!timedOut){
+      score = Math.floor(pointsReturn[0]);
+    } else{
+      score = 0
+    }
+    
     distance = Math.floor(pointsReturn[1]);
 
     placeMarker(location, "00FF00");
@@ -305,7 +347,6 @@ function calculateLatLngBounds(coords) {
 }
 
 function returnToStart() {
-  console.log(streetView)
   let loc = new google.maps.LatLng(location)
   streetView.setPosition(loc)
   streetView.setPov({ heading: 0, pitch: 0 })

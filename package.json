@@ -11,14 +11,14 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@turf/turf": "^7.2.0",
     "@types/google.maps": "^3.53.5",
     "typescript": "^5.5.3",
-    "vite": "^5.4.6",
-    "@turf/turf": "^7.2.0"
+    "vite": "^5.4.6"
   },
   "dependencies": {
+    "@turf/turf": "^7.2.0",
     "dotenv": "^16.4.7",
-    "express": "^4.21.1",
-    "@turf/turf": "^7.2.0"
+    "express": "^4.21.1"
   }
 }

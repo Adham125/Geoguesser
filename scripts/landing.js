@@ -1,7 +1,9 @@
 const startButton = document.getElementById("start-btn");
-const settingsButton = document.getElementById("settings-btn");
+const joinButton = document.getElementById("join-btn");
 const gameModeSelect = document.getElementById("game-mode");
 const roundsSelect = document.getElementById('rounds');
+const timer = document.getElementById("timer");
+const timerDropdown = document.getElementById("timerDropdown");
 var gamemode = gameModeSelect.value;
 
 localStorage.clear()
@@ -99,6 +101,14 @@ var countries = [
 
 roundsSelect.value = "99999"
 
+timer.addEventListener("change", (event) => {
+  if (event.target.checked) {
+    timerDropdown.style.display = "block"; // Show the dropdown
+  } else {
+    timerDropdown.style.display = "none"; // Hide the dropdown
+  }
+});
+
 document.getElementById("game-mode").addEventListener("change", function () {
     const countrySelectContainer = document.getElementById("country-select-container");
     if (this.value === "countrySelect") {
@@ -122,8 +132,15 @@ startButton.addEventListener("click", function() {
     const options = {
         moving: document.getElementById("moving").checked,
         zooming: document.getElementById("zooming").checked,
+        timer: document.getElementById("timer").checked
     };
     localStorage.setItem("gameOptions", JSON.stringify(options));
+
+    if (document.getElementById("timer").checked){
+      localStorage.setItem("timer", JSON.stringify(document.getElementById("timerDropdown").value));
+    }else{
+      localStorage.setItem("timer", JSON.stringify(""));
+    }
 
     const countrySelect = document.getElementById("country-select");
     localStorage.setItem("selectedCountry", JSON.stringify(countrySelect.value));
@@ -134,10 +151,15 @@ startButton.addEventListener("click", function() {
     window.location.href = 'pages/game.html';
 });
 
-// Settings Button Event Listener
-settingsButton.addEventListener("click", function() {
-    //alert("Settings clicked! You can add settings options here.");
-});
+/*
+// Join Button Event Listener
+joinButton.addEventListener("click", function() {
+  const socket = io('http://127.0.0.1:3000');
+
+  socket.on('connect', () => {
+    console.log('Connected to server');
+  });
+}); */
 
 function populateCountryDropdown() {
     const countrySelect = document.getElementById("country-select");

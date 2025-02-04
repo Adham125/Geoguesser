@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Game Landing Page</title>
   <link rel="stylesheet" href="stylesLanding.css">
-
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
   <div class="blurry-background"></div>
@@ -30,15 +30,50 @@
       </div>
       
       <h3>Game Control Options:</h3>
-      <div>
+
+      <div class="options-container">
+        <div>
+          <label class="option">
+            <input type="checkbox" id="moving" checked/>
+            Moving
+          </label>
+        </div>
+    
+        <div>
+          <label class="option">
+            <input type="checkbox" id="zooming" checked/>
+            Zooming
+          </label>
+        </div>
+    
+        <div>
+          <label class="option">
+            <input type="checkbox" id="timer"/>
+            Timer
+          </label>
+          <div id="timer">
+            <select id="timerDropdown" class="timer-dropdown" style="display: none;">
+              <option value="30">30 seconds</option>
+              <option value="60">1 minute</option>
+              <option value="90">1:30 minutes</option>
+              <option value="120">2 minutes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+
+      <!--<div id="gameOptions">
         <input type="checkbox" id="moving" checked>
         <label for="moving">Moving</label>
-      </div>
-      <div>
+      
         <input type="checkbox" id="zooming" checked>
         <label for="zooming">Zooming</label>
+      
+        <input type="checkbox" id="timer" checked>
+        <label for="timer">Timer</label>
       </div>
-    </div>
+    </div>-->
     
     <!-- Dropdown for number of rounds -->
     <div id="rounds-dropdown">
@@ -58,9 +93,9 @@
       </select>
     </div>
 
-    <!-- Settings Buttons -->
-    <div class="settings">
-      <button id="settings-btn">Settings</button>
+    <!-- Join Buttons -->
+    <div class="start-button">
+      <button id="join-btn">Join Lobby</button>
     </div>
 
     <!-- Start Button -->

@@ -55,7 +55,6 @@ body {
   }
   
   /* Layout of buttons */
-  .settings,
   .start-button {
     margin-top: 20px;
   }
@@ -110,4 +109,24 @@ body {
     background-position: center; /* Centers the image */
     filter: blur(8px); /* Adjust the blur intensity */
     z-index: -1; /* Places the background behind other content */
+}
+
+.options-container {
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  align-items: flex-start; /* Align items to the left */
+  gap: 15px; /* Space between items */
+  margin: 20px;
+}
+
+.option {
+  display: flex;
+  align-items: center; /* Align checkbox and text vertically */
+  gap: 10px; /* Space between checkbox and text */
+}
+
+.timer-dropdown {
+  margin-top: 5px;
+  font-size: 16px;
+  padding: 5px;
 }
