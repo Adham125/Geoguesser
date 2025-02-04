@@ -1,15 +1,85 @@
-const startButton = document.getElementById("start-btn");
-const createRoomButton = document.getElementById("join-btn");
-const gameModeSelect = document.getElementById("game-mode");
+const roomCodeDisplay = document.getElementById('roomCode');
 const roundsSelect = document.getElementById('rounds');
+const gameModeSelect = document.getElementById("game-mode");
 const timer = document.getElementById("timer");
 const timerDropdown = document.getElementById("timerDropdown");
-const joinRoom = document.getElementById("join-room-button");
-var gamemode = gameModeSelect.value;
+const movingCheck = document.getElementById("moving")
+const zoomingCheck = document.getElementById("zooming")
+const countrySelect = document.getElementById("country-select");
 
 const socket = io('http://16.171.186.49:3000');
+//console.log(socket)
+var roomName
+roundsSelect.value = "99999"
+const storedRoomId = sessionStorage.getItem('roomId');
 
-localStorage.clear()
+if (storedRoomId != ""){
+    roomName = storedRoomId
+    socket.emit("joinRoom", roomName)
+}else{
+    roomName = generateRoomCode(5)
+    socket.emit('createRoom', [roomName, [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]] )
+}
+
+roomCodeDisplay.textContent = `Room Code: ${roomName}`;
+
+socket.on("playerJoined", (players) => {
+    console.log(players)
+})
+
+socket.on("roomOptionsUpdate", options => {
+    updateOptions(options)
+})
+
+gameModeSelect.addEventListener("change", function () {
+    const countrySelectContainer = document.getElementById("country-select-container");
+    if (this.value === "countrySelect") {
+      countrySelectContainer.style.display = "block";
+      populateCountryDropdown(); // Populate the dropdown when shown
+    } else {
+      countrySelectContainer.style.display = "none";
+    }
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+  });
+
+movingCheck.addEventListener("change", function() {
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+})
+
+zoomingCheck.addEventListener("change", function() {
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+})
+
+timer.addEventListener("change", (event) => {
+    if (event.target.checked) {
+      timerDropdown.style.display = "block"; // Show the dropdown
+    } else {
+      timerDropdown.style.display = "none"; // Hide the dropdown
+    }
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+});
+
+timerDropdown.addEventListener("change", function() {
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+})
+
+roundsSelect.addEventListener("change", function () {
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+})
+
+countrySelect.addEventListener("change", function () {
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+})
+
+function generateRoomCode(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Letters and numbers
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters.charAt(randomIndex);
+    }
+    return result;
+}
 
 var countries = [
     { name: "Albania", iso3: "ALB" },
@@ -102,72 +172,6 @@ var countries = [
     { name: "Viet Nam", iso3: "VNM" }
   ];
 
-roundsSelect.value = "99999"
-
-timer.addEventListener("change", (event) => {
-  if (event.target.checked) {
-    timerDropdown.style.display = "block"; // Show the dropdown
-  } else {
-    timerDropdown.style.display = "none"; // Hide the dropdown
-  }
-});
-
-document.getElementById("game-mode").addEventListener("change", function () {
-    const countrySelectContainer = document.getElementById("country-select-container");
-    if (this.value === "countrySelect") {
-      countrySelectContainer.style.display = "block";
-      populateCountryDropdown(); // Populate the dropdown when shown
-    } else {
-      countrySelectContainer.style.display = "none";
-    }
-  });
-
-// Start Game Button Event Listener
-startButton.addEventListener("click", function() {
-    gamemode = gameModeSelect.value;  // Get the selected game mode
-
-    if(gamemode == "classic"){
-        localStorage.setItem("gameMode", JSON.stringify("classic"));
-    }else if(gamemode == "countrySelect"){
-        localStorage.setItem("gameMode", JSON.stringify("countrySelect"));
-    }
-
-    const options = {
-        moving: document.getElementById("moving").checked,
-        zooming: document.getElementById("zooming").checked,
-        timer: document.getElementById("timer").checked
-    };
-    localStorage.setItem("gameOptions", JSON.stringify(options));
-
-    if (document.getElementById("timer").checked){
-      localStorage.setItem("timer", JSON.stringify(document.getElementById("timerDropdown").value));
-    }else{
-      localStorage.setItem("timer", JSON.stringify(""));
-    }
-
-    const countrySelect = document.getElementById("country-select");
-    localStorage.setItem("selectedCountry", JSON.stringify(countrySelect.value));
-
-    const rounds = roundsSelect.value;
-    localStorage.setItem("rounds", JSON.stringify(rounds));
-
-    window.location.href = 'pages/game.html';
-});
-
-
-// Join Button Event Listener
-createRoomButton.addEventListener("click", function() {
-  sessionStorage.setItem("roomId", "")
-  window.location.href = 'pages/lobby.html';
-}); 
-
-joinRoom.addEventListener("click", function() {
-  const roomCodeInput = document.getElementById('room-code-input').value;
-  socket.emit('joinRoom', (roomCodeInput))
-  sessionStorage.setItem("roomId", roomCodeInput)
-  window.location.href = 'pages/lobby.html';
-})
-
 function populateCountryDropdown() {
     const countrySelect = document.getElementById("country-select");
     countrySelect.innerHTML = ""; // Clear any existing options
@@ -179,5 +183,21 @@ function populateCountryDropdown() {
       option.textContent = country.name;  // Display the full country name
       countrySelect.appendChild(option);
     });
-  }
+}
 
+function updateOptions(options) {
+    if (gameModeSelect.value != options[1]){
+        gameModeSelect.value = options[1]
+        gameModeSelect.dispatchEvent(new Event('change'))
+    }
+    movingCheck.checked = options[2]
+    zoomingCheck.checked = options[3]
+    if (timer.checked != options[4]){
+        timer.checked = options[4]
+        timer.dispatchEvent(new Event('change'))
+    }
+    
+    timerDropdown.value = options[5]
+    roundsSelect.value = options[6]
+    countrySelect.value = options[7]
+}

@@ -40,7 +40,7 @@ if (options.timer) {
   timer.style.display = "none"
 }
 
-async function initialize() {
+async function initialize(loc = null) {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
@@ -84,11 +84,15 @@ async function initialize() {
   
   while (true) {
     try {
-      let temp = await pickRandomPoint(countryISO); // Get a random point
-      polygon = temp[2]
-      temp = temp[0]
-      var randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
-  
+      var randomPoint
+      if (loc == null){
+        let temp = await pickRandomPoint(countryISO); // Get a random point
+        polygon = temp[2]
+        temp = temp[0]
+        randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
+      }else {
+        randomPoint = loc
+      }
     } catch (error) {
       console.error('Error:', error.message);
     }
@@ -350,20 +354,6 @@ function returnToStart() {
   let loc = new google.maps.LatLng(location)
   streetView.setPosition(loc)
   streetView.setPov({ heading: 0, pitch: 0 })
-}
-
-function updateTooltip() {
-  const sliderValue = slider.value;
-
-  // Update the tooltip text
-  tooltip.textContent = sliderValue;
-
-  // Calculate the position of the tooltip below the slider thumb
-  const sliderRect = slider.getBoundingClientRect();
-  const thumbOffset = ((sliderValue - slider.min) / (slider.max - slider.min)) * (sliderRect.width)  + 100;
-
-  // Update tooltip position
-  tooltip.style.left = `${thumbOffset}px`;
 }
 
 function closeScoresMenu(){

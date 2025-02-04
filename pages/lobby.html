@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="../imgs/globe.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Room</title>
+  <link rel="stylesheet" href="../stylesLanding.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script type="module" src="../scripts/lobby.js"></script>
+</head>
+<body>
+  <div class="blurry-background"></div>
+  <div class="landing-page">
+
+    <h1>Private Room</h1>
+
+    <h2 id="roomCode"></h2>
+
+    <!-- Game Mode Selection -->
+    <div class="game-mode-selection">
+      <h2>Select Game Mode</h2>
+      <select id="game-mode">
+        <option value="classic">Classic</option>
+        <!--<option value="medium">Medium</option>
+        <option value="hard">Hard</option>-->
+        <option value="countrySelect">Country Select</option>
+      </select>
+
+      <div id="country-select-container" style="display: none; margin-top: 10px;">
+        <label for="country-select">Select a Country:</label>
+        <select id="country-select"></select>
+      </div>
+      
+      <h3>Game Control Options:</h3>
+
+      <div class="options-container">
+        <div>
+          <label class="option">
+            <input type="checkbox" id="moving" checked/>
+            Moving
+          </label>
+        </div>
+    
+        <div>
+          <label class="option">
+            <input type="checkbox" id="zooming" checked/>
+            Zooming
+          </label>
+        </div>
+    
+        <div>
+          <label class="option">
+            <input type="checkbox" id="timer"/>
+            Timer
+          </label>
+          <div id="timer">
+            <select id="timerDropdown" class="timer-dropdown" style="display: none;">
+              <option value="30">30 seconds</option>
+              <option value="60">1 minute</option>
+              <option value="90">1:30 minutes</option>
+              <option value="120">2 minutes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    
+    <!-- Dropdown for number of rounds -->
+    <div id="rounds-dropdown">
+      <label for="rounds">Select Number of Rounds:</label>
+      <select id="rounds">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="99999">∞</option>
+      </select>
+    </div>
+
+    <!-- Start Button -->
+    <div class="start-button">
+      <button id="start-btn">Start Game</button>
+    </div>
+  </div>
+</body>
+</html>

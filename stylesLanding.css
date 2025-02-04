@@ -130,3 +130,15 @@ body {
   font-size: 16px;
   padding: 5px;
 }
+
+#join-room-container {
+  display: flex; /* Use flexbox for horizontal alignment */
+  align-items: center; /* Vertically align items */
+}
+
+#room-code-input {
+  margin-left: 10px; /* Add some space between button and input */
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
