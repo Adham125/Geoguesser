@@ -229,7 +229,9 @@ function nextRound() {
     mapcss.classList.toggle("swapped");
     panocss.classList.toggle("swapped");
     markers = []
-    resetTimer()
+    if (!options.timer) {
+      resetTimer()
+    }
     initialize();
   }
 }
