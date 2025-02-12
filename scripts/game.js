@@ -31,7 +31,7 @@ var currentRound = 1;
 var scoresMenu = document.getElementById("scoresMenu");
 var scoresList = document.getElementById("scoresList");
 
-var score;
+var ongoingScore = 0;
 var distance;
 
 var gamemode = JSON.parse(localStorage.getItem("gameMode"));
@@ -40,6 +40,7 @@ var polygon;
 var options = JSON.parse(localStorage.getItem("gameOptions"));
 var totalSeconds = JSON.parse(localStorage.getItem("timer"))
 var timerInterval;
+var ongoingScoreElement = document.getElementById('player-scores');
 
 const socket = io('http://16.171.186.49:3000');
 //const socket = io('http://localhost:3000');
@@ -48,6 +49,7 @@ var roomName = JSON.parse(localStorage.getItem("roomCode"))
 var hosting = JSON.parse(localStorage.getItem("roomHost"))
 var playerName = localStorage.getItem("playerName");
 var playerColour = localStorage.getItem("playerColour");
+var playerScoreMap = {}
 
 if (options.timer) {
   resetTimer()
@@ -56,6 +58,30 @@ if (options.timer) {
 }
 
 socket.emit("joinedGame", [roomName, playerName, playerColour])
+
+socket.on("playerJoined", players => { // vars = players {name, colour}
+
+  ongoingScoreElement.innerHTML = ''; // Clear existing scores
+  for (const player in players) {
+    const scoreDiv = document.createElement('div');
+
+    const playerNameSpan = document.createElement('span');
+    playerNameSpan.classList.add('player-name');
+    playerNameSpan.style.color = players[player].colour; // Color for the name
+    playerNameSpan.textContent = `${players[player].name}: `
+
+    const scoreSpan = document.createElement('span'); // Span for the score
+    scoreSpan.classList.add('score');
+    //scoreSpan.style.color = players[player].colour; 
+    scoreSpan.textContent = "0"
+
+    scoreDiv.appendChild(playerNameSpan);
+    scoreDiv.appendChild(scoreSpan);
+    ongoingScoreElement.appendChild(scoreDiv);
+    playerScoreMap[player] = [scoreSpan, false]
+  }
+  
+})
 
 socket.on("roomStartLocation", vars => {   // vars = [location, polygon, streetViewId]
   if (!hosting){
@@ -83,10 +109,10 @@ socket.on("initNextRound", function() {
 
 socket.on("drawGuess", vars => { // vars = resultsParsed[`round${round}`]
   let results = vars
-  //let colour = vars[1]
+
   for (const player in results) {
     if (player == socket.id){
-    
+      
     }else{
       polyLine = new google.maps.Polyline({
         path: [results[player].guess, results[player].location],
@@ -97,6 +123,12 @@ socket.on("drawGuess", vars => { // vars = resultsParsed[`round${round}`]
         map: map
       });
       placeMarker(results[player].guess, results[player].colour);
+
+    }
+    // Update ongoing scoreboard
+    if (!playerScoreMap[player][1]) {
+      playerScoreMap[player][0].textContent = parseInt(playerScoreMap[player][0].textContent) + results[player].score
+      playerScoreMap[player][1] = true
     }
   }
 })
@@ -104,6 +136,10 @@ socket.on("drawGuess", vars => { // vars = resultsParsed[`round${round}`]
 socket.on("roundEnded", function() {
   if(hosting){
     nextButton.disabled = false;
+  }
+
+  for (const player in playerScoreMap){
+    playerScoreMap[player][1] = false
   }
   
 })
@@ -122,6 +158,23 @@ async function initialize(id = null) {
   });
   map.setOptions({ clickableIcons: false });
   if (roomName == "Singleplayer"){
+    if(ongoingScoreElement.children.length == 0){
+      const scoreDiv = document.createElement('div');
+
+      const playerNameSpan = document.createElement('span');
+      playerNameSpan.classList.add('player-name');
+      playerNameSpan.textContent = "Score: "
+
+      const scoreSpan = document.createElement('span'); // Span for the score
+      scoreSpan.classList.add('score');
+      scoreSpan.textContent = "0"
+
+      scoreDiv.appendChild(playerNameSpan);
+      scoreDiv.appendChild(scoreSpan);
+      ongoingScoreElement.appendChild(scoreDiv);
+    }
+    
+
     clickListener = map.addListener("click", (e) => {
       setMapOnAll(null);
       placeMarker(e.latLng);
@@ -480,8 +533,24 @@ async function confirmSelect(timedOut) {
     panocss.classList.toggle("swapped");
 
     confirmButton.disabled = true;
+
     if (roomName == "Singleplayer"){
+      ongoingScoreElement.innerHTML = ''; // Clear existing scores
+      ongoingScore = ongoingScore + score
+
+      const scoreDiv = document.createElement('div');
+      scoreDiv.textContent = `Score: ${ongoingScore}`; // Display score directly
+      ongoingScoreElement.appendChild(scoreDiv);
+
       nextButton.disabled = false;
+      polyLine = new google.maps.Polyline({
+        path: [markers[markers.length-1].position, markers[markers.length-2].position],
+        geodesic: true,
+        strokeColor: "#FF0000",
+        strokeOpacity: 1.0, 
+        strokeWeight: 2 
+      });
+      polyLine.setMap(map);
     }else{
       polyLine = new google.maps.Polyline({
         path: [markers[markers.length-1].position, markers[markers.length-2].position],

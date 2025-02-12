@@ -217,3 +217,41 @@ a.actionButton {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 10px;
 }
+
+#score-tracker {
+  position: absolute;
+  top: 50%; /* Center vertically */
+  left: 10px; /* Adjust left offset as needed */
+  transform: translateY(-50%); /* Adjust vertical centering */
+  background-color: rgba(0, 0, 0, 0.6); /* Slightly more transparent */
+  color: white;
+  padding: 8px 12px; /* Slightly reduced padding */
+  border-radius: 5px;
+  font-size: 1em; /* Slightly smaller font */
+  font-weight: 500; /* Slightly less bold */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Lighter shadow */
+  white-space: nowrap; /* Prevent "Points" from wrapping */
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Arrange scores vertically */
+  align-items: flex-start; /* Align scores to the left */
+  z-index: 25;
+}
+
+#player-scores > div { /* Style for each player's score */
+  background-color: transparent;
+  color: white;
+  padding: 5px 10px;
+  margin-bottom: 5px; /* Space between player scores */
+  border-radius: 3px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+#player-scores > div span.player-name { /* Style for the name */
+  color: white;
+}
+
+#player-scores > div span.score { /* Style for the score */
+  color: white; /* White color for the score */
+  /* Add any other styles for the score here */
+}
