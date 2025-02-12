@@ -142,3 +142,40 @@ body {
   border: 1px solid #ccc;
   border-radius: 3px;
 }
+
+#player-list {
+  text-align: center;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+}
+
+#player-list h2 {
+  margin-bottom: 10px;
+}
+
+#player-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+#player-list li {
+  display: flex; /* Key: Enable flexbox on the list item */
+  align-items: center; /* Key: Vertically center items */
+  margin-bottom: 5px; /* Keep your spacing */
+  gap: 10px; /* Space between color and name */
+}
+
+.player-color-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
+/* Optional: Add some padding to the list item if needed */
+#player-list li {
+  padding: 5px; /* Or adjust as needed */
+}

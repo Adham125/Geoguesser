@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name and Color Selection</title>
+    <style>
+        #back-button {
+            position: fixed;
+            top: 10px;       /* Adjust the distance from the top */
+            left: 10px;      /* Adjust the distance from the left */
+            font-size: 18px; /* Adjust the text size */
+            color: #000000;     /* White text color (can be changed) */
+            text-decoration: none; /* Remove the underline */
+            font-weight: bold;  /* Optional: Make text bold */
+            background-color: transparent; /* No background */
+            border: none;     /* No border */
+            padding: 5px 10px; /* Padding around the text */
+            transition: color 0.3s ease; /* Smooth transition for hover effect */
+            z-index: 10;
+        }
+
+        #back-button:hover {
+            color: #ccc; /* Change color on hover */
+        }
+
+        .blurry-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('../imgs/worldmap.png');
+            background-size: cover; /* Ensures the image covers the entire background */
+            background-position: center; /* Centers the image */
+            filter: blur(8px); /* Adjust the blur intensity */
+            z-index: -1; /* Places the background behind other content */
+        }
+
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Center the content */
+        }
+
+        label {
+            display: block; /* Make labels stack on top of inputs */
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+
+        #color-input { /* Style the color input button */
+            width: 30px; /* Adjust as needed */
+            height: 30px; /* Adjust as needed */
+            border-radius: 50%; /* Make it round */
+            padding: 0; /* Remove default padding */
+            border: none; /* Remove default border */
+            cursor: pointer; /* Make it a pointer on hover */
+            background-color: #000; /* Set a default background */
+        }
+        #color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        #color-input::-webkit-color-swatch {
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script type="module" src="../scripts/pDetails.js"></script>
+    <a href="../index.html" id="back-button">&lt; Back</a>
+    <div class="blurry-background"></div>
+
+    <div class="container">
+        <h2>Enter Your Name and Choose a Colour</h2>
+        <div id="error-message"></div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <div class="container">
+            <label for="color-input">Marker Color:</label>
+            <input type="color" id="color-input" name="color" value="#000000">
+
+        </div>
+
+        <button id="submit-button">Enter Room</button>
+    </div>
+</body>
+</html>

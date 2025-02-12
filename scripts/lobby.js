@@ -6,29 +6,56 @@ const timerDropdown = document.getElementById("timerDropdown");
 const movingCheck = document.getElementById("moving")
 const zoomingCheck = document.getElementById("zooming")
 const countrySelect = document.getElementById("country-select");
+const startButton = document.getElementById("start-btn");
+const playerList = document.getElementById("players-ul");
 
 const socket = io('http://16.171.186.49:3000');
-//console.log(socket)
-var roomName
-roundsSelect.value = "99999"
-const storedRoomId = sessionStorage.getItem('roomId');
+//const socket = io('http://localhost:3000');
 
-if (storedRoomId != ""){
-    roomName = storedRoomId
-    socket.emit("joinRoom", roomName)
-}else{
-    roomName = generateRoomCode(5)
-    socket.emit('createRoom', [roomName, [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]] )
-}
+var playerName = localStorage.getItem("playerName")
+var colour = localStorage.getItem("playerColour") 
+var roomName = localStorage.getItem("roomId")
+var hosting = localStorage.getItem("roomHost")
+roundsSelect.value = "99999"
+
+socket.emit("joinedRoom", [roomName, playerName, colour])
 
 roomCodeDisplay.textContent = `Room Code: ${roomName}`;
 
-socket.on("playerJoined", (players) => {
+if (hosting == "false"){
+    startButton.disabled = true
+}else{
+    startButton.addEventListener("click", function() {
+        localStorage.setItem("roomHost", true);
+        socket.emit("startGame", roomName)
+    });
+}
+
+socket.on("playerJoined", players => {
+    playerList.innerHTML = ""; // Clear existing list
+    for (const player in players) {
+        const li = document.createElement("li");
+
+        const colorIndicator = document.createElement("div");
+        colorIndicator.classList.add("player-color-indicator");
+        colorIndicator.style.backgroundColor = players[player].colour;
+
+        const nameSpan = document.createElement("span"); // Use a span for the name
+        nameSpan.textContent = players[player].name;
+
+        li.appendChild(colorIndicator);
+        li.appendChild(nameSpan);                
+        playerList.appendChild(li);
+    };
     console.log(players)
 })
 
 socket.on("roomOptionsUpdate", options => {
     updateOptions(options)
+})
+
+socket.on("goToGame", function() {
+    startGame()
 })
 
 gameModeSelect.addEventListener("change", function () {
@@ -70,16 +97,6 @@ roundsSelect.addEventListener("change", function () {
 countrySelect.addEventListener("change", function () {
     socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
 })
-
-function generateRoomCode(length) {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Letters and numbers
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        result += characters.charAt(randomIndex);
-    }
-    return result;
-}
 
 var countries = [
     { name: "Albania", iso3: "ALB" },
@@ -200,4 +217,38 @@ function updateOptions(options) {
     timerDropdown.value = options[5]
     roundsSelect.value = options[6]
     countrySelect.value = options[7]
+}
+
+function startGame(){
+    var gamemode = gameModeSelect.value;  // Get the selected game mode
+
+    if(gamemode == "classic"){
+        localStorage.setItem("gameMode", JSON.stringify("classic"));
+    }else if(gamemode == "countrySelect"){
+        localStorage.setItem("gameMode", JSON.stringify("countrySelect"));
+    }
+
+    const options = {
+        moving: document.getElementById("moving").checked,
+        zooming: document.getElementById("zooming").checked,
+        timer: document.getElementById("timer").checked
+    };
+    localStorage.setItem("gameOptions", JSON.stringify(options));
+
+    if (document.getElementById("timer").checked){
+      localStorage.setItem("timer", JSON.stringify(document.getElementById("timerDropdown").value));
+    }else{
+      localStorage.setItem("timer", JSON.stringify(""));
+    }
+
+    const countrySelect = document.getElementById("country-select");
+    localStorage.setItem("selectedCountry", JSON.stringify(countrySelect.value));
+
+    const rounds = roundsSelect.value;
+    localStorage.setItem("rounds", JSON.stringify(rounds));
+
+    localStorage.setItem("roomCode", JSON.stringify(roomName));
+    
+
+    window.location.href = 'game.html';
 }

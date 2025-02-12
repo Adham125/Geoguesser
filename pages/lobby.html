@@ -6,13 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Game Room</title>
   <link rel="stylesheet" href="../stylesLanding.css">
+  <link rel="stylesheet" type="text/css" href="../style.css" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script type="module" src="../scripts/lobby.js"></script>
 </head>
 <body>
+  <a href="../index.html" id="back-button">&lt; Back</a>
   <div class="blurry-background"></div>
-  <div class="landing-page">
+  <div id="player-list">
+    <h2>Players in Room</h2>
+    <ul id="players-ul">
+        </ul>
+  </div>
 
+  <div class="landing-page">
     <h1>Private Room</h1>
 
     <h2 id="roomCode"></h2>
@@ -22,8 +29,6 @@
       <h2>Select Game Mode</h2>
       <select id="game-mode">
         <option value="classic">Classic</option>
-        <!--<option value="medium">Medium</option>
-        <option value="hard">Hard</option>-->
         <option value="countrySelect">Country Select</option>
       </select>
 
@@ -64,7 +69,7 @@
           </div>
         </div>
       </div>
-    
+
     <!-- Dropdown for number of rounds -->
     <div id="rounds-dropdown">
       <label for="rounds">Select Number of Rounds:</label>
@@ -83,10 +88,7 @@
       </select>
     </div>
 
-    <!-- Start Button -->
-    <div class="start-button">
-      <button id="start-btn">Start Game</button>
-    </div>
+    <button class="actionButton" id="start-btn">Start Game</button>
   </div>
 </body>
 </html>

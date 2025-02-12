@@ -8,6 +8,7 @@ const joinRoom = document.getElementById("join-room-button");
 var gamemode = gameModeSelect.value;
 
 const socket = io('http://16.171.186.49:3000');
+//const socket = io('http://localhost:3000');
 
 localStorage.clear()
 
@@ -151,21 +152,36 @@ startButton.addEventListener("click", function() {
     const rounds = roundsSelect.value;
     localStorage.setItem("rounds", JSON.stringify(rounds));
 
+    localStorage.setItem("roomCode", JSON.stringify("Singleplayer"));
+    localStorage.setItem("roomHost", true);
+
     window.location.href = 'pages/game.html';
 });
 
 
 // Join Button Event Listener
 createRoomButton.addEventListener("click", function() {
-  sessionStorage.setItem("roomId", "")
-  window.location.href = 'pages/lobby.html';
+  const roundsSelect = document.getElementById('rounds');
+  const gameModeSelect = document.getElementById("game-mode");
+  const timer = document.getElementById("timer");
+  const timerDropdown = document.getElementById("timerDropdown");
+  const movingCheck = document.getElementById("moving")
+  const zoomingCheck = document.getElementById("zooming")
+  const countrySelect = document.getElementById("country-select");
+
+  var roomName = generateRoomCode(5)
+  localStorage.setItem("roomId", roomName)
+  localStorage.setItem("roomHost", true)
+  socket.emit('createRoom', [roomName, [gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]] )
+
+  window.location.href = 'pages/playerDetails.html';
 }); 
 
 joinRoom.addEventListener("click", function() {
   const roomCodeInput = document.getElementById('room-code-input').value;
-  socket.emit('joinRoom', (roomCodeInput))
-  sessionStorage.setItem("roomId", roomCodeInput)
-  window.location.href = 'pages/lobby.html';
+  localStorage.setItem("roomId", roomCodeInput)
+  localStorage.setItem("roomHost", false)
+  window.location.href = 'pages/playerDetails.html';
 })
 
 function populateCountryDropdown() {
@@ -181,3 +197,12 @@ function populateCountryDropdown() {
     });
   }
 
+  function generateRoomCode(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Letters and numbers
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters.charAt(randomIndex);
+    }
+    return result;
+}

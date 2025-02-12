@@ -354,7 +354,7 @@ function getRandomPointInPolygon(polygon) {
   }
 }
 
-export async function loadGeoJSON(url) {
+async function loadGeoJSON(url) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -366,3 +366,7 @@ export async function loadGeoJSON(url) {
     throw error;
   }
 }
+
+/*module.exports = {
+  pickRandomPoint,
+};*/
