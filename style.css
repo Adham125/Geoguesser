@@ -245,6 +245,8 @@ a.actionButton {
   border-radius: 3px;
   font-size: 0.9rem;
   white-space: nowrap;
+  display: flex; /* Ensure flexbox is enabled on the parent */
+  align-items: center; /* Vertically center content */
 }
 
 #player-scores > div span.player-name { /* Style for the name */
@@ -254,4 +256,13 @@ a.actionButton {
 #player-scores > div span.score { /* Style for the score */
   color: white; /* White color for the score */
   /* Add any other styles for the score here */
+}
+
+#player-scores .checkmark-div {
+  margin-left: 5px; /* Add space to the left of the checkmark */
+  display: inline-block; /* Or flex, depending on your layout */
+}
+
+#player-scores .checkmark-div img {
+  vertical-align: middle;
 }

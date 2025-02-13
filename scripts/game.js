@@ -75,10 +75,22 @@ socket.on("playerJoined", players => { // vars = players {name, colour}
     //scoreSpan.style.color = players[player].colour; 
     scoreSpan.textContent = "0"
 
+    const checkmarkDiv = document.createElement('div'); // New div for checkmark
+    checkmarkDiv.classList.add('checkmark-div'); // Add a class for styling
+
+    const checkmarkImg = document.createElement('img');
+    checkmarkImg.src = '../imgs/checkMark.png'; // Path to your checkmark image
+    checkmarkImg.alt = 'Checkmark';
+    checkmarkImg.style.width = '20px'; // Adjust size as needed
+    checkmarkImg.style.height = '20px';
+    checkmarkDiv.appendChild(checkmarkImg);
+    checkmarkDiv.style.display = 'none'; // Initially hidden
+
     scoreDiv.appendChild(playerNameSpan);
     scoreDiv.appendChild(scoreSpan);
+    scoreDiv.appendChild(checkmarkDiv);
     ongoingScoreElement.appendChild(scoreDiv);
-    playerScoreMap[player] = [scoreSpan, false]
+    playerScoreMap[player] = [scoreSpan, false, checkmarkDiv]
   }
   
 })
@@ -96,6 +108,10 @@ socket.on("roomStartLocation", vars => {   // vars = [location, polygon, streetV
 })
 
 socket.on("initNextRound", function() { 
+
+  for (const player in playerScoreMap){   // Remove all check marks
+    playerScoreMap[player][2].style.display = 'none'
+  }
   
   if (hosting){
     initialize()
@@ -106,6 +122,11 @@ socket.on("initNextRound", function() {
     panocss.classList.toggle("swapped");
   }
 })
+
+socket.on("playerGuessed", player => {
+  //TODO: player guess notification ("guess" next to current score)
+  playerScoreMap[player][2].style.display = 'block'
+});
 
 socket.on("drawGuess", vars => { // vars = resultsParsed[`round${round}`]
   let results = vars
