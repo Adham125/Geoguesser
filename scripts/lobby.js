@@ -9,8 +9,11 @@ const countrySelect = document.getElementById("country-select");
 const startButton = document.getElementById("start-btn");
 const playerList = document.getElementById("players-ul");
 
-const socket = io('http://16.171.186.49:3000');
-//const socket = io('http://localhost:3000');
+const server = 'https://localhost'
+//const socket = io('http://16.171.186.49:3000');
+const socket = io(server, {
+    withCredentials: true
+  });
 
 var playerName = localStorage.getItem("playerName")
 var colour = localStorage.getItem("playerColour") 
@@ -226,7 +229,9 @@ function startGame(){
         localStorage.setItem("gameMode", JSON.stringify("classic"));
     }else if(gamemode == "countrySelect"){
         localStorage.setItem("gameMode", JSON.stringify("countrySelect"));
-    }
+    }else if(gamemode == "hideAndSeek"){
+        localStorage.setItem("gameMode", JSON.stringify("hideAndSeek"));
+      }
 
     const options = {
         moving: document.getElementById("moving").checked,
@@ -249,6 +254,9 @@ function startGame(){
 
     localStorage.setItem("roomCode", JSON.stringify(roomName));
     
-
-    window.location.href = 'game.html';
+    if (gamemode == "hideAndSeek"){
+        window.location.href = 'hideAndSeek.html';
+    }else{
+        window.location.href = 'game.html';
+    }
 }

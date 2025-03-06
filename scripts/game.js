@@ -40,10 +40,25 @@ var polygon;
 var options = JSON.parse(localStorage.getItem("gameOptions"));
 var totalSeconds = JSON.parse(localStorage.getItem("timer"))
 var timerInterval;
+var startTime;
 var ongoingScoreElement = document.getElementById('player-scores');
 
-const socket = io('http://16.171.186.49:3000');
-//const socket = io('http://localhost:3000');
+const server = 'https://localhost'
+//const socket = io('http://16.171.186.49:3000');
+const socket = io(server, {
+  withCredentials: true
+});
+
+socket.emit("loadAPIKeyMaps", (callback) => {
+  let key = callback.key
+
+  const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=marker&callback=initialize&v=weekly`;
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+  console.log("done loading maps")
+})
 
 var roomName = JSON.parse(localStorage.getItem("roomCode"))
 var hosting = JSON.parse(localStorage.getItem("roomHost"))
@@ -64,6 +79,7 @@ socket.on("playerJoined", players => { // vars = players {name, colour}
   ongoingScoreElement.innerHTML = ''; // Clear existing scores
   for (const player in players) {
     const scoreDiv = document.createElement('div');
+    scoreDiv.classList.add('score-div');
 
     const playerNameSpan = document.createElement('span');
     playerNameSpan.classList.add('player-name');
@@ -222,6 +238,8 @@ async function initialize(id = null) {
   if(id != null){      // Other players actions
     await getStreetView(id)
   }
+
+  startTime = Date.now()
 }
 
 function placeMarker(latLng, colour = "#FF6347") {
@@ -358,6 +376,7 @@ async function getStreetView (id = null) {             //<------------------ Mai
 }
 
 function populateMultiplayerScores(scores = null) {      // Server score: [`round${round}`][socket.id] { "guess": guess, "location": location, "score": score, "distance": distance}                                                         
+  var players
   google.maps.event.removeListener(clickListener);
   panocss.classList.toggle("hidden")
   markers = []
@@ -369,6 +388,8 @@ function populateMultiplayerScores(scores = null) {      // Server score: [`roun
   if( scores == null){
     dataAll = JSON.parse(localStorage.getItem("roundsResults"))
   }else{
+    players = scores.players
+    scores = scores.rounds
     dataAll = JSON.parse(scores)
   }
   
@@ -463,7 +484,7 @@ function populateMultiplayerScores(scores = null) {      // Server score: [`roun
     playerTotalsArray.forEach(([player, data]) => {
       const totalRow = `
         <tr style="background-color: #f0f0f0;">
-          <td style="border: 1px solid black; padding: 8px;">${player === socket.id ? "<strong>You</strong>" : player}</td>
+          <td style="border: 1px solid black; padding: 8px;">${players[player].name}</td>
           <td style="border: 1px solid black; padding: 8px;">Total</td>
           <td style="border: 1px solid black; padding: 8px;">${data.totalPoints}</td>
         </tr>
@@ -533,6 +554,8 @@ function nextRound() {
 }
 
 async function confirmSelect(timedOut) {
+  let elapsedTime = (Date.now() - startTime) / 1000; // Calculate elapsed time in seconds
+
   if (markers.length > 0) {
     clearInterval(timerInterval)
     timer.style.display = 'none';
@@ -572,7 +595,9 @@ async function confirmSelect(timedOut) {
         strokeWeight: 2 
       });
       polyLine.setMap(map);
-    }else{
+
+      socket.emit("singleplayerGuess", [markers[markers.length-2].position, currentRound, location, score, distance, elapsedTime, gamemode])
+    }else{                                 //Multiplayer line drawing
       polyLine = new google.maps.Polyline({
         path: [markers[markers.length-1].position, markers[markers.length-2].position],
         geodesic: true,
@@ -582,7 +607,7 @@ async function confirmSelect(timedOut) {
       });
       polyLine.setMap(map);
 
-      socket.emit("guessed", [roomName, markers[markers.length-2].position, currentRound, location, score, distance, playerColour])
+      socket.emit("guessed", [roomName, markers[markers.length-2].position, currentRound, location, score, distance, playerColour, elapsedTime, gamemode])
     }
 
     google.maps.event.removeListener(clickListener);

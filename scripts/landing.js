@@ -5,10 +5,24 @@ const roundsSelect = document.getElementById('rounds');
 const timer = document.getElementById("timer");
 const timerDropdown = document.getElementById("timerDropdown");
 const joinRoom = document.getElementById("join-room-button");
+const loginStatus = document.getElementById("loginStatus");
+const loginButton = document.getElementById("login-button")
 var gamemode = gameModeSelect.value;
 
-const socket = io('http://16.171.186.49:3000');
-//const socket = io('http://localhost:3000');
+const server = 'https://localhost'
+//const socket = io('http://16.171.186.49:3000');
+const socket = io(server, {
+  withCredentials: true
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  //const cookie = document.cookie
+  socket.emit("validateCookie", {}, response => {
+    if (response.success){
+      loginStatus.innerText = `Logged in: ${response.username}`;
+    }
+  })
+});
 
 localStorage.clear()
 
@@ -105,6 +119,13 @@ var countries = [
 
 roundsSelect.value = "99999"
 
+loginButton.addEventListener("click", (event) => {
+  sessionStorage.setItem("stay", true)
+  socket.emit("logout", {}, (response) => {
+    window.location.href = '../index.html';
+})
+})
+
 timer.addEventListener("change", (event) => {
   if (event.target.checked) {
     timerDropdown.style.display = "block"; // Show the dropdown
@@ -155,7 +176,7 @@ startButton.addEventListener("click", function() {
     localStorage.setItem("roomCode", JSON.stringify("Singleplayer"));
     localStorage.setItem("roomHost", true);
 
-    window.location.href = 'pages/game.html';
+    window.location.href = './game.html';
 });
 
 
@@ -174,14 +195,14 @@ createRoomButton.addEventListener("click", function() {
   localStorage.setItem("roomHost", true)
   socket.emit('createRoom', [roomName, [gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]] )
 
-  window.location.href = 'pages/playerDetails.html';
+  window.location.href = './playerDetails.html';
 }); 
 
 joinRoom.addEventListener("click", function() {
   const roomCodeInput = document.getElementById('room-code-input').value;
   localStorage.setItem("roomId", roomCodeInput)
   localStorage.setItem("roomHost", false)
-  window.location.href = 'pages/playerDetails.html';
+  window.location.href = './playerDetails.html';
 })
 
 function populateCountryDropdown() {

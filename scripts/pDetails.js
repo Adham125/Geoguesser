@@ -4,11 +4,29 @@ const errorMessage = document.getElementById("error-message");
 const colorInput = document.getElementById("color-input");
 const roomCode = localStorage.getItem("roomId");
 
-const socket = io('http://16.171.186.49:3000');
-//const socket = io('http://localhost:3000');
+const server = 'https://localhost'
+//const socket = io('http://16.171.186.49:3000');
+const socket = io(server, {
+    withCredentials: true
+});
 
 var roomName = localStorage.getItem("roomId")
 
+if (roomName == null){
+    socket.emit("checkPlayerDetails", {}, (response) => {
+        if (response.success){
+            window.location.href = "main.html";
+        }
+    })
+}else{
+    socket.emit("checkPlayerDetails", {}, (response) => {
+        if (response.success){
+            localStorage.setItem("playerName", response.username);
+            localStorage.setItem("playerColour", response.colour);
+            window.location.href = "lobby.html";
+        }
+    })
+}
 
 colorInput.addEventListener("input", () => {
     colorInput.style.backgroundColor = colorInput.value;
@@ -32,13 +50,22 @@ submitButton.addEventListener("click", () => {
     localStorage.setItem("playerName", name);
     localStorage.setItem("playerColour", colour);
 
-    socket.emit('joinRoom', [roomCode, name, colour])
+    if(roomName == null){
+        socket.emit("updatePlayerDetails", {colour: colour}, (response) => {
+            if (response.success){
+                window.location.href = "main.html";
+            }
+        })
+        
+    }else{
+        socket.emit('joinRoom', [roomCode, name, colour])
+    }
+    
     
 });
 
 socket.on("goToRoom", roomName => {
-    // Redirect to the game room page
-    window.location.href = "lobby.html"; // Replace with your game room URL
+    window.location.href = "lobby.html"; 
 })
 
 

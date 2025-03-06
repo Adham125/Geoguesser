@@ -4,25 +4,22 @@
   <link rel="icon" href="../imgs/globe.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Room</title>
+  <title>Game Landing Page</title>
   <link rel="stylesheet" href="../styles/stylesLanding.css">
-  <link rel="stylesheet" type="text/css" href="../styles/style.css" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-  <script type="module" src="../scripts/lobby.js"></script>
 </head>
 <body>
-  <a href="./main.html" id="back-button">&lt; Back</a>
   <div class="blurry-background"></div>
-  <div id="player-list">
-    <h2>Players in Room</h2>
-    <ul id="players-ul">
-        </ul>
+
+  <div id="top-right-container">
+    <button id="loginStatus">Guest Mode</button>
+    <button id="login-button">Logout</button>
   </div>
+  
 
   <div class="landing-page">
-    <h1>Private Room</h1>
-
-    <h2 id="roomCode"></h2>
+    <!-- Welcome Title -->
+    <h1>Welcome to GeoGuesser!</h1>
 
     <!-- Game Mode Selection -->
     <div class="game-mode-selection">
@@ -30,7 +27,6 @@
       <select id="game-mode">
         <option value="classic">Classic</option>
         <option value="countrySelect">Country Select</option>
-        <option value="hideAndSeek">Hide And Seek</option>
       </select>
 
       <div id="country-select-container" style="display: none; margin-top: 10px;">
@@ -70,7 +66,7 @@
           </div>
         </div>
       </div>
-
+    
     <!-- Dropdown for number of rounds -->
     <div id="rounds-dropdown">
       <label for="rounds">Select Number of Rounds:</label>
@@ -89,7 +85,22 @@
       </select>
     </div>
 
-    <button class="actionButton" id="start-btn">Start Game</button>
+    <!-- Join Buttons -->
+    <div class="start-button">
+      <button id="join-btn">Create Lobby</button>
+    </div>
+
+    <div id="join-room-container" class="start-button">
+      <button id="join-room-button">Join Room</button>
+      <input type="text" id="room-code-input" placeholder="Enter room code">
+    </div>
+
+    <!-- Start Button -->
+    <div class="start-button">
+      <button id="start-btn">Start Game</button>
+    </div>
   </div>
+
+  <script type="module" src="../scripts/landing.js"></script>
 </body>
 </html>
