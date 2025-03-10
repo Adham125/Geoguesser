@@ -107,7 +107,7 @@ var roundsData = await getRoundsData();
 var countryStats = processRoundsData(roundsData);
 
 // Fetch the GeoJSON for the map (no change here)
-fetch('../geojson/world-admin-boundaries.geojson')
+fetch('../geojson/world-admin-boundaries-new.geojson')
     .then(response => response.json())
     .then(geojsonData => {
         addGeoJSONLayer(geojsonData, countryStats);
@@ -194,7 +194,7 @@ async function getRoundsData() {
 function addGeoJSONLayer(geojson, countryStats) {
     L.geoJSON(geojson, {
         style: function(feature) {
-            var isoCode = feature.properties.iso3;
+            var isoCode = feature.properties.color_code;
             var stats = countryStats[isoCode];
             var averageScore = stats ? stats.averageScore : 0;
             var colour;
@@ -219,7 +219,7 @@ function addGeoJSONLayer(geojson, countryStats) {
         onEachFeature: function(feature, layer) {
             layer.on('click', function() {
                 //console.log(feature)
-                var isoCode = feature.properties.iso3;
+                var isoCode = feature.properties.color_code;
                 var stats = countryStats[isoCode];
                 var countryName = feature.properties.name;
 

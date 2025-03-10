@@ -8,6 +8,8 @@ const panocss = document.getElementById("pano");
 var streetView;
 var streetViewId;
 var markers = [];
+var markerISOs = []
+var locationISO;
 var polyLine;
 var location = null;
 
@@ -193,6 +195,14 @@ async function initialize(id = null) {
     mapId: "1b65baa89de7a1e3",
   });
   map.setOptions({ clickableIcons: false });
+  map.data.loadGeoJson("../geojson/world-admin-boundaries-new.geojson")
+  map.data.setStyle({
+    fillColor: "white",
+    strokeWeight: 1,
+    strokeOpacity: 0,
+    fillOpacity: 0,
+  });
+
   if (roomName == "Singleplayer"){
     if(ongoingScoreElement.children.length == 0){
       const scoreDiv = document.createElement('div');
@@ -211,14 +221,16 @@ async function initialize(id = null) {
     }
     
 
-    clickListener = map.addListener("click", (e) => {
+    clickListener = map.data.addListener("click", (e) => { //feature, Fg, iso3/name
       setMapOnAll(null);
       placeMarker(e.latLng);
+      markerISOs.push(e.feature.Fg.iso3)
     });
   }else{
-    clickListener = map.addListener("click", (e) => {
+    clickListener = map.data.addListener("click", (e) => {
       setMapOnAll(null);
       placeMarker(e.latLng, playerColour);
+      markerISOs.push(e.feature.Fg.iso3)
     });
   }
   
@@ -320,6 +332,7 @@ async function getStreetView (id = null) {             //<------------------ Mai
       try {
         var randomPoint
         let temp = await pickRandomPoint(countryISO); // Get a random point
+        locationISO = temp[1]
         polygon = temp[2]
         temp = temp[0]
         randomPoint = new google.maps.LatLng({lat: temp.geometry.coordinates[1], lng: temp.geometry.coordinates[0]});
@@ -595,7 +608,7 @@ async function confirmSelect(timedOut) {
       });
       polyLine.setMap(map);
 
-      socket.emit("singleplayerGuess", [markers[markers.length-2].position, currentRound, location, score, distance, elapsedTime, gamemode])
+      socket.emit("singleplayerGuess", [markers[markers.length-2].position, currentRound, location, score, distance, elapsedTime, gamemode, markerISOs[markerISOs.length-1], locationISO])
     }else{                                 //Multiplayer line drawing
       polyLine = new google.maps.Polyline({
         path: [markers[markers.length-1].position, markers[markers.length-2].position],
@@ -606,7 +619,7 @@ async function confirmSelect(timedOut) {
       });
       polyLine.setMap(map);
 
-      socket.emit("guessed", [roomName, markers[markers.length-2].position, currentRound, location, score, distance, playerColour, elapsedTime, gamemode])
+      socket.emit("guessed", [roomName, markers[markers.length-2].position, currentRound, location, score, distance, playerColour, elapsedTime, gamemode, markerISOs[markerISOs.length-1], locationISO])
     }
 
     google.maps.event.removeListener(clickListener);
