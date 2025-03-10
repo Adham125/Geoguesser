@@ -16,10 +16,17 @@ if (roomName == null){
     socket.emit("checkPlayerDetails", {}, (response) => {
         if (response.success){
             window.location.href = "main.html";
+        }else if (response.message == "Not All Player details available") {
+            if (response.details.colour){
+                colorInput.value = response.details.colour
+            }else{
+                nameInput.value = response.details.username
+            }
         }
     })
 }else{
     socket.emit("checkPlayerDetails", {}, (response) => {
+        console.log(response)
         if (response.success){
             localStorage.setItem("playerName", response.username);
             localStorage.setItem("playerColour", response.colour);
@@ -51,7 +58,7 @@ submitButton.addEventListener("click", () => {
     localStorage.setItem("playerColour", colour);
 
     if(roomName == null){
-        socket.emit("updatePlayerDetails", {colour: colour}, (response) => {
+        socket.emit("updatePlayerDetails", {colour: colour, name: name}, (response) => {
             if (response.success){
                 window.location.href = "main.html";
             }

@@ -119,11 +119,15 @@ var countries = [
 
 roundsSelect.value = "99999"
 
+loginStatus.addEventListener("click", (event) => {
+  window.location.href = './profile.html';
+})
+
 loginButton.addEventListener("click", (event) => {
   sessionStorage.setItem("stay", true)
   socket.emit("logout", {}, (response) => {
     window.location.href = '../index.html';
-})
+  })
 })
 
 timer.addEventListener("change", (event) => {

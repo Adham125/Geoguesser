@@ -14,7 +14,7 @@ const socket = io(server, {
 loginButton.addEventListener('click', (event) => {
     event.preventDefault();
 
-    const username = document.getElementById('username-input').value;
+    const email = document.getElementById('username-input').value;
     const password = document.getElementById('password-input').value;
 
     fetch(`${server}/login`, {
@@ -22,7 +22,7 @@ loginButton.addEventListener('click', (event) => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
         credentials: 'include'
     })
     .then(response => response.json())
@@ -43,10 +43,10 @@ loginButton.addEventListener('click', (event) => {
 signUpButton.addEventListener('click', (event) => {
     event.preventDefault();
 
-    const username = document.getElementById('username-input').value;
+    const email = document.getElementById('username-input').value;
     const password = document.getElementById('password-input').value;
 
-    socket.emit('signup', { username, password }, (response) => {
+    socket.emit('signup', { email, password }, (response) => {
         if (response.success) {
             console.log('Signup successful:', response);
             alert("Signup successful! Please login");
@@ -64,7 +64,7 @@ signUpButton.addEventListener('click', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     socket.emit("validateCookie", {}, response => {
         if (response.success){
-          loginStatus.innerText = `Logged in: ${response.username}`;
+          loginStatus.innerText = `Logged in: ${response.email}`;
           if(!sessionStorage.getItem("stay")){
             window.location.href = './pages/playerDetails.html';
           }

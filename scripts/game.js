@@ -57,7 +57,6 @@ socket.emit("loadAPIKeyMaps", (callback) => {
       script.async = true;
       script.defer = true;
       document.body.appendChild(script);
-  console.log("done loading maps")
 })
 
 var roomName = JSON.parse(localStorage.getItem("roomCode"))
