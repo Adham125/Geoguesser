@@ -1,0 +1,24 @@
+# Frontend CI: build the Jekyll site to catch templating/config errors
+# on push. The built site is not deployed from CI (the Pi pulls + builds
+# itself), this is purely a syntax / structural gate.
+
+name: ci
+
+on:
+  push:
+    branches: [main, Multiplayer]
+  pull_request:
+
+jobs:
+  jekyll-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: bundle exec jekyll build
+        run: bundle exec jekyll build --trace
