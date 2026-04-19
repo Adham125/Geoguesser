@@ -1,11 +1,11 @@
+import { serverURL as server } from "./config.js";
+
 const nameInput = document.getElementById("name");
 const submitButton = document.getElementById("submit-button");
 const errorMessage = document.getElementById("error-message");
 const colorInput = document.getElementById("color-input");
 const roomCode = localStorage.getItem("roomId");
 
-const server = 'https://localhost'
-//const socket = io('http://16.171.186.49:3000');
 const socket = io(server, {
     withCredentials: true
 });
@@ -14,19 +14,20 @@ var roomName = localStorage.getItem("roomId")
 
 if (roomName == null){
     socket.emit("checkPlayerDetails", {}, (response) => {
+        if (!response) return;
         if (response.success){
             window.location.href = "main.html";
-        }else if (response.message == "Not All Player details available") {
-            if (response.details.colour){
+        } else if (response.message === "Not All Player details available") {
+            if (response.details && response.details.colour){
                 colorInput.value = response.details.colour
-            }else{
+            } else if (response.details && response.details.username){
                 nameInput.value = response.details.username
             }
         }
     })
 }else{
     socket.emit("checkPlayerDetails", {}, (response) => {
-        console.log(response)
+        if (!response) return;
         if (response.success){
             localStorage.setItem("playerName", response.username);
             localStorage.setItem("playerColour", response.colour);

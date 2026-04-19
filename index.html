@@ -7,6 +7,16 @@
   <title>Game Login Page</title>
   <link rel="stylesheet" href="./styles/stylesLanding.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
 </head>
 <body>
   <div id="top-right-container">
@@ -19,8 +29,8 @@
     <h2>Login / Sign up</h2>
 
     <div>
-        <input type="email" id="username-input" placeholder="Enter Email">
-        <input type="password" id="password-input" placeholder="Enter Password">
+        <input autocomplete="email" type="email" id="username-input" placeholder="Enter Email">
+        <input autocomplete="current-password" type="password" id="password-input" placeholder="Enter Password">
     </div>
     <!-- Join Buttons -->
     <div class="start-button">

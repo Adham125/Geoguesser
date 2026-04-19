@@ -1,24 +1,9 @@
 {
   "name": "Geoguesser",
-  "description": "Geoguesser game",
+  "description": "Geoguesser game frontend (static Jekyll site; ES-module JS served by the Node backend).",
   "version": "0.1",
-  "files": [],
-  "scripts": {
-    "dev": "vite",
-    "start": "vite",
-    "build": "vite build --outDir dist --base './'",
-    "test": "tsc --noEmit",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "@turf/turf": "^7.2.0",
-    "@types/google.maps": "^3.53.5",
-    "typescript": "^5.5.3",
-    "vite": "^5.4.6"
-  },
+  "private": true,
   "dependencies": {
-    "@turf/turf": "^7.2.0",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.1"
+    "@turf/turf": "^7.2.0"
   }
 }

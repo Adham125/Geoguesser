@@ -1,86 +1,165 @@
+@import url('./tokens.css');
+
+/* Back button — pill-style card, consistent across every page using this
+   stylesheet (index / main / lobby / playerDetails / profile). */
+#back-button {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 30;
+    font-family: var(--font-heading);
+    font-size: var(--font-size-sm);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-fg);
+    text-decoration: none;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+    transition: color var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out),
+                box-shadow var(--dur-fast) var(--ease-out);
+}
+#back-button:hover {
+    color: var(--color-primary);
+    background: var(--color-muted);
+    box-shadow: var(--shadow-md);
+}
+
 /*----------------------------------------Landing Page----------------------------------------*/
-/* General styles */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f4f7;
+    font-family: var(--font-body);
+    color: var(--color-fg);
+    background-color: var(--color-bg);
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
   }
-  
+
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
   .landing-page {
+    position: relative;
     text-align: center;
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 300px;
+    background-color: var(--color-surface);
+    color: var(--color-fg);
+    padding: var(--space-8) var(--space-6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: min(92vw, 420px);
+    border: 1px solid var(--color-border);
   }
 
   .landing-page input[type="email"],
-  .landing-page input[type="password"] {
-      width: calc(100% - 22px);
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
+  .landing-page input[type="password"],
+  .landing-page input[type="text"] {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      margin: var(--space-2) 0;
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: var(--font-size-base);
+      color: var(--color-fg);
+      background: var(--color-surface-2);
       box-sizing: border-box;
-      transition: border-color 0.3s ease;
+      transition: border-color var(--dur-fast) var(--ease-out),
+                  box-shadow var(--dur-fast) var(--ease-out),
+                  background var(--dur-fast) var(--ease-out);
       outline: none;
   }
 
   .landing-page input[type="email"]:focus,
-  .landing-page input[type="password"]:focus {
-      border-color: #4285f4;
-      box-shadow: 0 0 5px rgba(66, 133, 244, 0.2);
+  .landing-page input[type="password"]:focus,
+  .landing-page input[type="text"]:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      background: var(--color-surface);
   }
 
-  .landing-page input[type="email"]::placeholder,
-  .landing-page input[type="password"]::placeholder {
-      color: #aaa;
+  .landing-page input::placeholder {
+      color: var(--color-fg-muted);
+      opacity: 0.7;
   }
 
-  .landing-page input[type="email"]:invalid,
-  .landing-page input[type="password"]:invalid {
-      border-color: #f44336;
-  }
-  
   h1 {
-    color: #333;
-    font-size: 2.5em;
-    margin-bottom: 20px;
+    font-family: var(--font-heading);
+    font-size: var(--font-size-3xl);
+    letter-spacing: 0.02em;
+    margin: 0 0 var(--space-3);
+    /* Fallback color for browsers that drop background-clip: text. The
+       -webkit-text-fill-color override paints the gradient in every
+       evergreen engine; legacy engines fall back to --color-primary. */
+    color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
-  
+
   h2 {
-    color: #444;
-    margin-bottom: 10px;
+    font-family: var(--font-heading);
+    color: var(--color-fg-muted);
+    font-size: var(--font-size-lg);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 var(--space-4);
   }
-  
+
   select {
-    padding: 10px;
-    font-size: 1.2em;
-    margin-bottom: 20px;
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-4);
     width: 100%;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface);
+    color: var(--color-fg);
   }
-  
+
   button {
-    padding: 10px 20px;
-    font-size: 1.2em;
-    background-color: #3498db;
-    color: #fff;
+    padding: var(--space-3) var(--space-5);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-base);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    color: var(--color-on-primary);
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background-color 0.3s;
+    box-shadow: var(--shadow-primary);
+    transition: transform var(--dur-fast) var(--ease-out),
+                box-shadow var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out);
   }
-  
-  button:hover {
-    background-color: #2980b9;
+
+  button:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--color-primary-hover) 0%, var(--color-primary-active) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  }
+
+  button:disabled {
+    background: var(--color-border-strong);
+    color: #64748B;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
   }
 
   #top-right-container {
@@ -93,55 +172,39 @@ body {
     gap: 5px; /* Add space between elements */
   }
 
-  #login-button {
-    font-size: 18px; /* Adjust the text size */
-    color: #000000;     /* White text color (can be changed) */
-    text-decoration: none; /* Remove the underline */
-    font-weight: bold;  /* Optional: Make text bold */
-    background-color: transparent; /* No background */
-    border: none;     /* No border */
-    padding: 5px 10px; /* Padding around the text */
-    transition: color 0.3s ease; /* Smooth transition for hover effect */
+  #login-button,
+  #logout-button,
+  #loginStatus {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-base);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-fg);
+    text-decoration: none;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+    transition: color var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out),
+                box-shadow var(--dur-fast) var(--ease-out);
     z-index: 10;
+    cursor: pointer;
   }
-  
-  #login-button:hover {
-    color: #ccc; /* Change color on hover */
+
+  #login-button:hover,
+  #logout-button:hover,
+  #loginStatus:hover {
+    color: var(--color-primary);
+    background: var(--color-muted);
+    box-shadow: var(--shadow-md);
   }
-  
+
   #logout-button {
     position: fixed;
-    top: 10px;       /* Adjust the distance from the top */
-    left: 10px;      /* Adjust the distance from the left */
-    font-size: 18px; /* Adjust the text size */
-    color: #000000;     /* White text color (can be changed) */
-    text-decoration: none; /* Remove the underline */
-    font-weight: bold;  /* Optional: Make text bold */
-    background-color: transparent; /* No background */
-    border: none;     /* No border */
-    padding: 5px 10px; /* Padding around the text */
-    transition: color 0.3s ease; /* Smooth transition for hover effect */
-    z-index: 10;
-  }
-  
-  #logout-button:hover {
-    color: #ccc; /* Change color on hover */
-  }
-
-  #loginStatus {    
-    font-size: 18px; 
-    color: #000000;     
-    text-decoration: none; 
-    font-weight: bold;  
-    background-color: transparent; 
-    border: none;     
-    padding: 5px 10px; 
-    transition: color 0.3s ease; 
-    z-index: 10;
-  }
-
-  #loginStatus:hover {
-    color: #ccc; /* Change color on hover */
+    top: 10px;
+    left: 10px;
   }
 
   /* Layout of buttons */
@@ -155,33 +218,35 @@ body {
 
   #rounds-dropdown {
     position: relative;
-    top: 10px;  /* Position it at the top of the page */
-    left: 0px; /* Position it to the left */
-    color: #444;
-    padding: 10px;
-    border-radius: 5px;
-    z-index: 3; /* Ensure it's above other content */
+    top: 10px;
+    left: 0px;
+    color: var(--color-fg);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    z-index: 3;
   }
-  
+
   #rounds-dropdown label {
-    font-size: 1.0em;
-    margin-right: 10px; /* Add space between the label and dropdown */
-    font-weight: bold;
+    font-size: var(--font-size-base);
+    margin-right: var(--space-2);
+    font-weight: 600;
+    color: var(--color-fg);
   }
-  
+
   .dropdown-container {
-    display: inline-block; /* Make the select box inline with the label */
+    display: inline-block;
     width: auto;
   }
-  
+
   #rounds {
-    font-size: 16px;
-    padding: 5px;
-    background-color: white;
-    color: black;
-    border-radius: 5px;
-    border: none;
-    width: 50px; /* Adjust the width of the dropdown */
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    padding: 6px 8px;
+    background-color: var(--color-surface-2);
+    color: var(--color-fg);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-strong);
+    width: 60px;
   }
   
   #rounds:hover {
@@ -195,10 +260,18 @@ body {
     width: 100%;
     height: 100%;
     background-image: url('../imgs/worldmap.png');
-    background-size: cover; /* Ensures the image covers the entire background */
-    background-position: center; /* Centers the image */
-    filter: blur(8px); /* Adjust the blur intensity */
-    z-index: -1; /* Places the background behind other content */
+    background-size: cover;
+    background-position: center;
+    filter: blur(8px) saturate(1.1);
+    z-index: -1;
+}
+
+/* Gradient overlay on top of the blurred world map — adds brand color without obscuring imagery. */
+.blurry-background::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.35) 0%, rgba(124, 58, 237, 0.35) 100%);
 }
 
 .options-container {
@@ -227,23 +300,77 @@ body {
 }
 
 #room-code-input {
-  margin-left: 10px; /* Add some space between button and input */
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  margin-left: var(--space-2);
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-fg);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+#room-code-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+#room-code-input::placeholder {
+  color: var(--color-fg-muted);
+  opacity: 0.8;
+}
+
+/* Game-mode / country / timer selects inside the landing card */
+#game-mode,
+#country-select,
+.timer-dropdown {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  padding: 8px 12px;
+  background: var(--color-surface-2);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  width: 100%;
+}
+
+/* Checkbox + label rows */
+.option {
+  color: var(--color-fg);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+/* Section heading inside the landing card — e.g. "Game Control Options" */
+.landing-page h3 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fg-muted);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+/* Room code label (set by JS). */
+#roomCode {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.15em;
+  color: var(--color-accent);
+  margin-top: 0;
 }
 
 #player-list {
   text-align: center;
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  background-color: var(--color-surface);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: min(90vw, 340px);
+  border: 1px solid var(--color-border);
 }
 
 #player-list h2 {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 #player-list ul {
@@ -252,20 +379,114 @@ body {
 }
 
 #player-list li {
-  display: flex; /* Key: Enable flexbox on the list item */
-  align-items: center; /* Key: Vertically center items */
-  margin-bottom: 5px; /* Keep your spacing */
-  gap: 10px; /* Space between color and name */
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  gap: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .player-color-indicator {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 1px solid #ccc;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+  flex-shrink: 0;
 }
 
 /* Optional: Add some padding to the list item if needed */
 #player-list li {
   padding: 5px; /* Or adjust as needed */
+}
+
+#player-list li .player-name-text {
+  flex: 1;
+  text-align: left;
+}
+
+#player-list li {
+  position: relative;
+}
+
+#player-list li.transferable {
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+#player-list li.transferable:hover {
+  background: var(--color-surface-3, rgba(255,255,255,0.08));
+  transform: translateX(2px);
+}
+
+.player-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  cursor: default;
+}
+
+.player-menu-header {
+  padding: 4px 10px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-fg-muted, #94A3B8);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2px;
+}
+
+.player-menu-item {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.player-menu-item:hover {
+  background: var(--color-surface-3, rgba(255,255,255,0.08));
+}
+
+.player-menu-item--danger {
+  color: var(--color-destructive);
+}
+
+.player-menu-item--danger:hover {
+  background: rgba(220, 38, 38, 0.15);
+}
+
+#player-list .host-badge {
+  display: inline-block;
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #111;
+  background: #FFD166;
+  border-radius: 999px;
+  line-height: 1.4;
+  flex-shrink: 0;
 }

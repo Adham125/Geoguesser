@@ -7,6 +7,16 @@
   <title>Game Landing Page</title>
   <link rel="stylesheet" href="../styles/stylesLanding.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
 </head>
 <body>
   <div class="blurry-background"></div>
@@ -81,7 +91,7 @@
         <option value="8">8</option>
         <option value="9">9</option>
         <option value="10">10</option>
-        <option value="99999">∞</option>
+        <option value="99999" selected>∞</option>
       </select>
     </div>
 

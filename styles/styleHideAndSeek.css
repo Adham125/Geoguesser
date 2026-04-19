@@ -1,0 +1,998 @@
+@import url('./tokens.css');
+
+html,
+body {
+  font-family: var(--font-body);
+  color: var(--color-fg);
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--color-bg);
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-heading);
+  letter-spacing: 0.01em;
+  color: var(--color-fg);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Core layout: map + pano (same pattern as classic game) ---------- */
+#pano {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  transition: all 0.5s ease;
+}
+#pano.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Hider spectator mode: swallow all input so the hider cannot pan, walk,
+   click-to-go, or otherwise nudge the seeker's view they're watching. */
+#pano.spectating-locked,
+#pano.spectating-locked * {
+  pointer-events: none !important;
+}
+/* Applied briefly when the spectated seeker walks to a new panorama: a
+   forward-zoom + dim + soft blur that mimics Street View's own walking
+   transition, so the hider doesn't experience the pano swap as a teleport. */
+#pano.spectator-warping {
+  filter: blur(2px) brightness(0.7);
+  transform: scale(1.04);
+  transition: filter 260ms ease-out, transform 260ms ease-out;
+}
+#pano.swapped {
+  width: 15vw;
+  height: 15vh;
+  position: absolute !important;
+  bottom: 110px;
+  right: 20px;
+  z-index: 2;
+  border: 2px solid #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+#pano.is-loading {
+  background: linear-gradient(110deg, #0F172A 20%, #1E293B 40%, #0F172A 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transition: all 0.5s ease;
+  border: none;
+}
+/* During SEEK phase we swap: pano becomes main, map shrinks to corner. */
+#map.swapped {
+  position: absolute;
+  inset: auto;
+  bottom: 110px;
+  right: 20px;
+  width: 15vw;
+  height: 15vh;
+  z-index: 2;
+  border: 2px solid #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+#map.swapped:hover {
+  width: 40vw;
+  height: 35vh;
+}
+
+.loading-spinner {
+  border: 6px solid rgba(255, 255, 255, 0.2);
+  border-top: 6px solid var(--color-primary);
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  animation: spin 1.1s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 10;
+}
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ---------- Back button ---------- */
+#back-button {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-fg);
+  text-decoration: none;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  z-index: 30;
+}
+#back-button:hover {
+  color: var(--color-primary);
+  background: var(--color-muted);
+}
+
+/* ---------- Phase banner ---------- */
+.phase-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(15, 23, 42, 0.9);
+  color: #FFFFFF;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.phase-label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.phase-sub {
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+}
+.phase-banner[data-phase="seek"] .phase-label {
+  color: var(--color-primary);
+}
+
+/* ---------- Timer (reused from style.css) ---------- */
+.timer-container {
+  z-index: 20;
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+.timer {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78));
+  color: #FFFFFF;
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
+  font-variant-numeric: tabular-nums;
+  display: none;
+}
+.timer.warning {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.9));
+}
+.timer.critical {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.95), rgba(185, 28, 28, 0.9));
+  animation: timer-pulse 800ms ease-in-out infinite alternate;
+}
+@keyframes timer-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}
+
+/* ---------- Compass ---------- */
+#compass {
+  z-index: 25;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 50%;
+  padding: 6px;
+  box-shadow: var(--shadow-md);
+}
+#compass.hidden {
+  display: none;
+}
+#compass img {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Floating action panel ---------- */
+#floating-panel {
+  position: absolute;
+  bottom: 25px;
+  right: 20px;
+  z-index: 5;
+  background: var(--color-surface);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  text-align: center;
+  font-family: var(--font-heading);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-width: min(560px, calc(100vw - 40px));
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-on-primary);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-primary);
+  transition: transform var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.actionButton:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-primary-hover) 0%, var(--color-primary-active) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+}
+.actionButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+.actionButton:disabled {
+  background: var(--color-border-strong);
+  color: #64748B;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.actionButton--accent {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  color: #1F2937;
+}
+.actionButton--accent:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-accent-hover) 0%, #B45309 100%);
+  box-shadow: var(--shadow-accent);
+}
+
+/* Ghost-red destructive variant — used for host-only "End Game" action. */
+.actionButton--danger {
+  background: transparent;
+  color: var(--color-destructive);
+  border: 2px solid var(--color-destructive);
+  box-shadow: none;
+}
+.actionButton--danger:hover:not(:disabled) {
+  background: var(--color-destructive);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-danger);
+}
+.actionButton--danger:active:not(:disabled) {
+  background: var(--color-destructive-hover);
+}
+
+/* Host-only End Game affordance, pinned top-right so it's reachable in
+   every phase (hide / seek / reveal) without interfering with the phase
+   banner or timer. */
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-fg-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+.icon-btn:hover {
+  color: var(--color-fg);
+  background: var(--color-muted);
+}
+
+/* ---------- Left-side roster/scoreboard panel ---------- */
+.hs-panel {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.92);
+  color: #FFFFFF;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-lg);
+  width: 240px;
+  max-height: 70vh;
+  overflow-y: auto;
+  backdrop-filter: blur(6px);
+  font-size: var(--font-size-sm);
+}
+.hs-panel-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.hs-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.hs-panel li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.hs-panel li.ready {
+  background: rgba(16, 185, 129, 0.18);
+}
+.hs-panel li.is-owner {
+  background: rgba(245, 158, 11, 0.18);
+}
+.hs-panel li.is-me {
+  border: 1px solid rgba(59, 130, 246, 0.55);
+}
+
+/* HOST indicator shown next to the current room host in the roster. */
+.hs-panel .host-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #111;
+  background: #FFD166;
+  border-radius: 999px;
+  line-height: 1.3;
+}
+
+/* Player chip (color dot + name). */
+.player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  color: #FFFFFF;
+}
+
+/* Compact hider label used inline inside the phase-banner subtitle. Uses
+   the body font + a small coloured dot so it reads as part of the sentence
+   instead of the heavier block-style .player-chip. */
+.hider-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: #FFFFFF;
+}
+.hider-inline::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--player-color, #94A3B8);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+.player-chip::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--player-color, #94A3B8);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.hs-panel .ready-dot {
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+.hs-panel li.ready .ready-dot {
+  background: var(--color-success);
+}
+.hs-panel li.ready .ready-dot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 7px;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+  transform: translate(-50%, -65%) rotate(45deg);
+}
+
+.hs-panel .score-value {
+  margin-left: auto;
+  font-family: var(--font-heading);
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.hs-panel .guess-badge {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--color-success);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+#startSeekButton {
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
+/* ---------- Hider's bottom tab strip ---------- */
+/* Positioned along the bottom so it never clashes with the top-center timer
+   or phase banner. The hider has no floating action panel on screen (guess
+   button is hidden for the round's owner), so bottom-center is clear. */
+.hider-tabs {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lg);
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+}
+.hider-tabs.hidden {
+  display: none;
+}
+.hider-tabs-label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+.hider-tabs-list {
+  display: flex;
+  gap: var(--space-1);
+}
+.hider-tab {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.hider-tab:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.hider-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+}
+.hider-tab .tab-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tab-color, #94A3B8);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Empty-state banner when no seekers are moving yet. */
+#pano.awaiting-spectator::after {
+  content: "Waiting for a seeker to start moving…";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  color: #FFFFFF;
+  background: linear-gradient(110deg, #0F172A 20%, #1E293B 40%, #0F172A 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-6);
+  text-align: center;
+  z-index: 2;
+}
+
+/* ---------- Legacy spectator panel (kept hidden after rework) ---------- */
+.spectator-toggle {
+  position: absolute;
+  top: 16px;
+  right: 72px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: rgba(15, 23, 42, 0.9);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+.spectator-toggle:hover {
+  background: rgba(37, 99, 235, 0.9);
+}
+.spectator-toggle.hidden {
+  display: none;
+}
+
+.spectator-panel {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  left: auto;
+  transform: none;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  z-index: 40;
+}
+.spectator-panel.hidden {
+  display: none;
+}
+.spectator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.spectator-tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+.spectator-tab {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.spectator-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+}
+.spectator-tab .tab-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tab-color, #94A3B8);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.spectator-stage {
+  flex: 1;
+  min-height: 220px;
+  position: relative;
+  background: #0B1220;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.spectator-pano {
+  position: absolute;
+  inset: 0;
+}
+.spectator-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  text-align: center;
+  padding: 0 var(--space-4);
+}
+
+/* ---------- Guess picker modal ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  padding: var(--space-4);
+}
+.modal.hidden {
+  display: none;
+}
+.modal-card {
+  background: var(--color-surface);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 440px;
+}
+.modal-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-4);
+  text-align: center;
+}
+.guess-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.guess-list button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  width: 100%;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-fg);
+  box-shadow: none;
+}
+.guess-list button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-muted);
+  transform: none;
+  box-shadow: none;
+}
+.guess-list button .player-chip {
+  color: var(--color-fg);
+}
+.guess-list button .player-chip::before {
+  border: 1px solid var(--color-border-strong);
+}
+
+/* ---------- Hide → Seek countdown overlay ---------- */
+.hs-countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: #FFFFFF;
+  background: rgba(11, 18, 32, 0.55);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.hs-countdown.hidden { display: none; }
+.hs-countdown-label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+}
+.hs-countdown-number {
+  font-family: var(--font-heading);
+  font-size: 9rem;
+  line-height: 1;
+  color: #FFFFFF;
+  text-shadow: 0 6px 40px rgba(37, 99, 235, 0.75);
+  /* The pulse is retriggered per-tick from JS by resetting the animation. */
+  animation: hs-countdown-pulse 900ms var(--ease-out);
+}
+@keyframes hs-countdown-pulse {
+  0%   { transform: scale(0.55); opacity: 0; }
+  30%  { transform: scale(1.12); opacity: 1; }
+  60%  { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+/* ---------- Reveal overlay ---------- */
+/* Non-blocking: overlay itself ignores pointer events so the map below is
+   still pannable; the card re-enables them for its own controls. */
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 64px var(--space-4) var(--space-4);
+  pointer-events: none;
+  background: transparent;
+}
+.reveal-overlay.hidden {
+  display: none;
+}
+.reveal-card {
+  pointer-events: auto;
+  background: var(--color-surface);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  text-align: center;
+}
+.reveal-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-3);
+  color: var(--color-fg-muted);
+}
+.reveal-owner {
+  font-size: var(--font-size-lg);
+  margin: 0 0 var(--space-4);
+}
+.reveal-owner .player-chip {
+  color: var(--color-fg);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+}
+.reveal-guesses {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: left;
+}
+.reveal-guesses li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.reveal-guesses li.correct {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+.reveal-guesses li.wrong {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+.reveal-guesses .guess-arrow {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}
+.reveal-guesses .guess-delta {
+  margin-left: auto;
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+.reveal-guesses li.correct .guess-delta {
+  color: var(--color-success);
+}
+.reveal-countdown {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* ---------- Final scores menu (reused from classic) ---------- */
+.scores-menu {
+  position: fixed;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94vw, 720px);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  text-align: left;
+  z-index: 1000;
+  transition: top var(--dur-slow) var(--ease-out);
+}
+.scores-menu h2 {
+  margin: -24px -24px var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.scores-menu.hidden {
+  top: -100%;
+}
+.scores-menu.visible {
+  top: 20px;
+}
+
+.scores-winner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  color: #1F2937;
+  margin: var(--space-2) 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(135deg, #FFE9A8, #F59E0B);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-accent);
+}
+.scores-winner .trophy-icon {
+  color: #1F2937;
+}
+.scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.scores-table th,
+.scores-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+.scores-table thead th {
+  background: var(--color-muted);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-fg-muted);
+}
+.scores-table .totals-row {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.12));
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.04em;
+}
+.scores-table .totals-row.winner {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.25));
+  color: #1F2937;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+/* ---------- Utility ---------- */
+.hidden {
+  display: none !important;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+  .hs-panel {
+    position: fixed;
+    left: 8px;
+    right: auto;
+    width: 180px;
+    font-size: var(--font-size-xs);
+    padding: var(--space-2);
+  }
+  .spectator-panel {
+    width: calc(100vw - 32px);
+    max-height: 60vh;
+  }
+  .phase-banner {
+    font-size: var(--font-size-xs);
+    padding: 6px 10px;
+  }
+  .phase-banner .phase-sub {
+    display: none;
+  }
+  #floating-panel {
+    bottom: 8px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}

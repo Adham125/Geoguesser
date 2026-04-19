@@ -3,68 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>Profile — GeoGuesser</title>
+    <link rel="icon" href="../imgs/globe.png">
     <link rel="stylesheet" href="../styles/stylesLanding.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-DHZBWJCCDC');
+    </script>
+    <style>
+        /* Page-local styling. Shared components (back button, inputs, buttons)
+           are picked up from stylesLanding.css + tokens.css. */
+
+        body {
+            /* Override landing's centred flex so two columns can stretch. */
+            display: block;
+            align-items: initial;
+            justify-content: initial;
+            height: auto;
+            min-height: 100vh;
+            padding: 72px var(--space-4) var(--space-6);
+            box-sizing: border-box;
+        }
+
+        .profile-shell {
+            display: grid;
+            grid-template-columns: minmax(320px, 1fr) minmax(0, 1.6fr);
+            gap: var(--space-6);
+            max-width: 1320px;
+            margin: 0 auto;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .profile-shell { grid-template-columns: 1fr; }
+        }
+
+        .profile-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-6);
+        }
+
+        .profile-card h1 {
+            font-size: var(--font-size-2xl);
+            margin: 0 0 var(--space-2);
+        }
+        .profile-subtitle {
+            color: var(--color-fg-muted);
+            font-size: var(--font-size-sm);
+            margin: 0 0 var(--space-4);
+        }
+
+        .profile-section {
+            margin-top: var(--space-5);
+            padding-top: var(--space-5);
+            border-top: 1px solid var(--color-border);
+        }
+        .profile-section:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .profile-section h3 {
+            font-family: var(--font-heading);
+            font-size: var(--font-size-sm);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--color-fg-muted);
+            margin: 0 0 var(--space-1);
+        }
+        .profile-section .hint {
+            color: var(--color-fg-muted);
+            font-size: var(--font-size-sm);
+            margin: 0 0 var(--space-3);
+            opacity: 0.85;
+        }
+
+        .pd-field {
+            text-align: left;
+            margin-bottom: var(--space-3);
+        }
+        .pd-field label {
+            display: block;
+            font-family: var(--font-heading);
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--color-fg-muted);
+            margin-bottom: var(--space-2);
+        }
+        .pd-field input[type="text"],
+        .pd-field input[type="email"],
+        .pd-field input[type="password"] {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--color-border-strong);
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: var(--font-size-base);
+            color: var(--color-fg);
+            background: var(--color-surface-2);
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color var(--dur-fast) var(--ease-out),
+                        box-shadow var(--dur-fast) var(--ease-out),
+                        background var(--dur-fast) var(--ease-out);
+        }
+        .pd-field input:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+            background: var(--color-surface);
+        }
+
+        /* Colour swatch row — same pattern as playerDetails. */
+        .pd-color-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-2) var(--space-3);
+            background: var(--color-surface-2);
+            border: 1px solid var(--color-border-strong);
+            border-radius: var(--radius-md);
+        }
+        .pd-color-label {
+            flex: 1;
+            font-family: var(--font-body);
+            font-size: var(--font-size-base);
+            color: var(--color-fg);
+        }
+        .pd-swatch {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+        .pd-swatch-visible {
+            display: block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--color-surface);
+            box-shadow: 0 0 0 1px var(--color-border-strong), var(--shadow-sm);
+            background-color: #2563EB;
+            pointer-events: none;
+            transition: transform var(--dur-fast) var(--ease-out);
+        }
+        .pd-swatch-visible::after {
+            content: "";
+            position: absolute;
+            right: -4px;
+            bottom: -4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--color-surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20h9'/><path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z'/></svg>") no-repeat center;
+            background-size: 10px 10px;
+            border: 1px solid var(--color-border-strong);
+        }
+        .pd-swatch:hover .pd-swatch-visible {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-md);
+        }
+        .pd-swatch input[type="color"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            margin: 0;
+            z-index: 1;
+        }
+        .pd-swatch input[type="color"]:focus-visible + .pd-swatch-visible {
+            outline: 3px solid var(--color-ring);
+            outline-offset: 3px;
+        }
+
+        /* Section action button — reuses the global button style but stays
+           full-width and separated from the last field by only a small gap. */
+        .submit-btn {
+            width: 100%;
+            margin-top: var(--space-2);
+        }
+        .submit-btn--danger {
+            background: linear-gradient(180deg, var(--color-destructive) 0%, var(--color-destructive-hover) 100%);
+            box-shadow: var(--shadow-danger);
+        }
+        .submit-btn--danger:hover:not(:disabled) {
+            background: linear-gradient(180deg, var(--color-destructive-hover) 0%, #991B1B 100%);
+        }
+
+        /* Stats column */
+        .profile-stats #map {
+            width: 100%;
+            height: 520px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border-strong);
+            background: var(--color-surface-2);
+        }
+        .profile-stats #country-stats {
+            margin-top: var(--space-4);
+            padding: var(--space-4);
+            background: var(--color-surface-2);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+        .profile-stats #country-details p {
+            margin: var(--space-1) 0;
+            color: var(--color-fg);
+            font-size: var(--font-size-sm);
+        }
+        .profile-stats #country-details p strong {
+            font-family: var(--font-heading);
+            letter-spacing: 0.04em;
+            color: var(--color-accent);
+            font-size: var(--font-size-base);
+        }
+        .profile-stats .close-btn {
+            width: auto;
+            padding: var(--space-2) var(--space-4);
+            font-size: var(--font-size-xs);
+            margin-bottom: var(--space-3);
+            background: transparent;
+            color: var(--color-destructive);
+            border: 2px solid var(--color-destructive);
+            box-shadow: none;
+        }
+        .profile-stats .close-btn:hover {
+            background: var(--color-destructive);
+            color: #FFFFFF;
+        }
+        .hidden { display: none !important; }
+
+        /* Leaflet attribution styling so it blends with the dark surface. */
+        .leaflet-container {
+            background: var(--color-surface-2);
+        }
+        .leaflet-control-attribution {
+            background: rgba(17, 28, 54, 0.8) !important;
+            color: var(--color-fg-muted) !important;
+        }
+        .leaflet-control-attribution a { color: var(--color-primary) !important; }
+    </style>
 </head>
-<body class="bg-gray-100 flex min-h-screen">
+<body>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script type="module" src="../scripts/profile.js" defer></script>
+    <script src="../scripts/backButton.js" defer></script>
 
-    <div class="bg-white p-6 shadow-lg w-1/3 min-h-screen">
-        <a href="./main.html" id="back-button">&lt; Back</a>
-        <h2 id="profileTitle" class="text-xl font-semibold mb-4">Profile Settings</h2>
-        
-    <!-- <form class="space-y-4"> -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700">New Email</label>
-            <input type="text" id="email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
-            <input type="password" id="confirm_password_email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <button id="email-change-btn" type="submit" class="w-full bg-green-500 text-white p-2 rounded-md">Confirm Email Change</button>
+    <a href="./main.html" id="back-button">&lt; Back</a>
+    <div class="blurry-background"></div>
 
+    <div class="profile-shell">
+        <!-- Settings column -->
+        <div class="profile-card">
+            <h1 id="profileTitle">Profile</h1>
+            <p class="profile-subtitle">Manage your identity and account.</p>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700">New Password</label>
-            <input type="text" id="new_password" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Confirm Old Password</label>
-            <input type="password" id="confirm_password" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <button id="password-change-btn" type="submit" class="w-full bg-red-500 text-white p-2 rounded-md">Confirm Password Change</button>
+            <!-- Display Identity: username + colour shown in lobby/game. -->
+            <section class="profile-section">
+                <h3>Display Identity</h3>
+                <p class="hint">How you appear to other players.</p>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700">New Username</label>
-            <input type="text" id="username" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
-            <input type="password" id="confirm_password_username" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-        </div>
-        
-        <button id="username-change-btn" type="submit" class="w-full bg-green-500 text-white p-2 rounded-md">Confirm Username Change</button>
+                <div class="pd-field">
+                    <label for="display-username">Display Name</label>
+                    <input type="text" id="display-username" autocomplete="username" placeholder="Your name">
+                </div>
 
+                <div class="pd-field">
+                    <label for="display-colour-input">Marker Colour</label>
+                    <div class="pd-color-row">
+                        <span class="pd-color-label">Tap the swatch to change</span>
+                        <span class="pd-swatch">
+                            <input type="color" id="display-colour-input" value="#2563EB" aria-label="Marker colour">
+                            <span class="pd-swatch-visible" id="display-swatch-visible" aria-hidden="true"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <button id="display-identity-btn" class="submit-btn">Save Identity</button>
+            </section>
+
+            <!-- Email change (requires password) -->
+            <section class="profile-section">
+                <h3>Change Email</h3>
+                <p class="hint">Used to sign in.</p>
+
+                <div class="pd-field">
+                    <label for="email">New Email</label>
+                    <input type="email" id="email" autocomplete="email" placeholder="new@example.com">
+                </div>
+
+                <div class="pd-field">
+                    <label for="confirm_password_email">Confirm Password</label>
+                    <input type="password" id="confirm_password_email" autocomplete="current-password">
+                </div>
+
+                <button id="email-change-btn" class="submit-btn">Change Email</button>
+            </section>
+
+            <!-- Password change -->
+            <section class="profile-section">
+                <h3>Change Password</h3>
+                <p class="hint">You'll stay signed in on this device.</p>
+
+                <div class="pd-field">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" autocomplete="new-password">
+                </div>
+
+                <div class="pd-field">
+                    <label for="confirm_password">Confirm Current Password</label>
+                    <input type="password" id="confirm_password" autocomplete="current-password">
+                </div>
+
+                <button id="password-change-btn" class="submit-btn submit-btn--danger">Change Password</button>
+            </section>
+        </div>
+
+        <!-- Stats column -->
+        <div class="profile-card profile-stats">
+            <h1>Your Stats</h1>
+            <p class="profile-subtitle">Tap a country on the map to see how you've done there.</p>
+            <div id="map"></div>
+            <div id="country-stats" class="hidden">
+                <button onclick="showWorldMap()" class="close-btn">Close</button>
+                <div id="country-details"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Stats Section -->
-    <div class="flex-1 p-6">
-        <h3 class="text-lg font-semibold mb-4">Your Stats</h3>
-        <div id="map" class="bg-gray-200 p-4 rounded-md w-full h-[500px]"></div>
-        <div id="country-stats" class="hidden bg-gray-200 p-4 rounded-md mt-4">
-            <button onclick="showWorldMap()" class="mb-2 bg-blue-500 text-white p-2 rounded-md">Close</button>
-            <div id="country-details"></div>
-        </div>
-    </div>
+    <script>
+        // Mirror the live colour onto the visible swatch (same pattern as
+        // playerDetails — the <input type=color> is transparent and overlaid).
+        (function () {
+            const input = document.getElementById('display-colour-input');
+            const swatch = document.getElementById('display-swatch-visible');
+            if (!input || !swatch) return;
+            const sync = () => { swatch.style.backgroundColor = input.value; };
+            input.addEventListener('input', sync);
+            input.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
 </body>
 </html>

@@ -1,3 +1,7 @@
+import { serverURL as server } from "./config.js";
+import { populateCountryDropdown } from "./countries.js";
+import { showMessage } from "./popup.js";
+
 const roomCodeDisplay = document.getElementById('roomCode');
 const roundsSelect = document.getElementById('rounds');
 const gameModeSelect = document.getElementById("game-mode");
@@ -6,52 +10,165 @@ const timerDropdown = document.getElementById("timerDropdown");
 const movingCheck = document.getElementById("moving")
 const zoomingCheck = document.getElementById("zooming")
 const countrySelect = document.getElementById("country-select");
+const hsSettings = document.getElementById("hs-settings");
+const hsAllowPhotospheresCheck = document.getElementById("hsAllowPhotospheres");
 const startButton = document.getElementById("start-btn");
 const playerList = document.getElementById("players-ul");
 
-const server = 'https://localhost'
-//const socket = io('http://16.171.186.49:3000');
 const socket = io(server, {
     withCredentials: true
   });
 
 var playerName = localStorage.getItem("playerName")
-var colour = localStorage.getItem("playerColour") 
+var colour = localStorage.getItem("playerColour")
 var roomName = localStorage.getItem("roomId")
-var hosting = localStorage.getItem("roomHost")
 roundsSelect.value = "99999"
+
+// Server is authoritative for host identity; localStorage is only a hint
+// until the first `hostChanged` socket event arrives. Start button is
+// disabled by default and re-enabled when we receive hostChanged for us.
+let currentHostId = null;
+let currentPlayers = {};
+startButton.disabled = true;
 
 socket.emit("joinedRoom", [roomName, playerName, colour])
 
 roomCodeDisplay.textContent = `Room Code: ${roomName}`;
 
-if (hosting == "false"){
-    startButton.disabled = true
-}else{
-    startButton.addEventListener("click", function() {
-        localStorage.setItem("roomHost", true);
-        socket.emit("startGame", roomName)
-    });
-}
+startButton.addEventListener("click", function() {
+    if (currentHostId !== socket.id) return;
+    socket.emit("startGame", roomName);
+});
 
-socket.on("playerJoined", players => {
-    playerList.innerHTML = ""; // Clear existing list
-    for (const player in players) {
+function renderPlayerList() {
+    playerList.innerHTML = "";
+    const amHost = currentHostId && currentHostId === socket.id;
+    for (const sid in currentPlayers) {
         const li = document.createElement("li");
+        const isHost = sid === currentHostId;
+        const isMe = sid === socket.id;
 
         const colorIndicator = document.createElement("div");
         colorIndicator.classList.add("player-color-indicator");
-        colorIndicator.style.backgroundColor = players[player].colour;
+        colorIndicator.style.backgroundColor = currentPlayers[sid].colour;
 
-        const nameSpan = document.createElement("span"); // Use a span for the name
-        nameSpan.textContent = players[player].name;
+        const nameSpan = document.createElement("span");
+        nameSpan.classList.add("player-name-text");
+        nameSpan.textContent = currentPlayers[sid].name + (isMe ? " (you)" : "");
 
         li.appendChild(colorIndicator);
-        li.appendChild(nameSpan);                
+        li.appendChild(nameSpan);
+
+        if (isHost) {
+            const hostBadge = document.createElement("span");
+            hostBadge.classList.add("host-badge");
+            hostBadge.textContent = "HOST";
+            li.appendChild(hostBadge);
+        }
+
+        // If I'm host, clicking another player opens a small menu with
+        // "Make Host" / "Kick Player" actions.
+        if (amHost && !isMe) {
+            li.classList.add("transferable");
+            li.title = `Actions for ${currentPlayers[sid].name}`;
+            li.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openPlayerMenu(li, sid, currentPlayers[sid].name);
+            });
+        }
+
         playerList.appendChild(li);
-    };
-    console.log(players)
-})
+    }
+}
+
+function openPlayerMenu(anchorLi, targetSid, targetName) {
+    // Toggle: clicking the same row again closes the menu.
+    const existing = document.querySelector(".player-menu");
+    if (existing) {
+        const openFor = existing.dataset.sid;
+        existing.remove();
+        document.removeEventListener("click", closePlayerMenuOnOutside, true);
+        if (openFor === targetSid) return;
+    }
+
+    const menu = document.createElement("div");
+    menu.className = "player-menu";
+    menu.dataset.sid = targetSid;
+
+    const header = document.createElement("div");
+    header.className = "player-menu-header";
+    header.textContent = targetName;
+    menu.appendChild(header);
+
+    const makeHostBtn = document.createElement("button");
+    makeHostBtn.type = "button";
+    makeHostBtn.className = "player-menu-item";
+    makeHostBtn.textContent = "Make Host";
+    makeHostBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        socket.emit("transferHost", [roomName, targetSid]);
+        closePlayerMenu();
+    });
+    menu.appendChild(makeHostBtn);
+
+    const kickBtn = document.createElement("button");
+    kickBtn.type = "button";
+    kickBtn.className = "player-menu-item player-menu-item--danger";
+    kickBtn.textContent = "Kick Player";
+    kickBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        socket.emit("kickPlayer", [roomName, targetSid]);
+        closePlayerMenu();
+    });
+    menu.appendChild(kickBtn);
+
+    anchorLi.appendChild(menu);
+    // Register outside-click listener on the next tick so the click that
+    // opened the menu doesn't also close it.
+    setTimeout(() => {
+        document.addEventListener("click", closePlayerMenuOnOutside, true);
+    }, 0);
+}
+
+function closePlayerMenu() {
+    const m = document.querySelector(".player-menu");
+    if (m) m.remove();
+    document.removeEventListener("click", closePlayerMenuOnOutside, true);
+}
+
+function closePlayerMenuOnOutside(e) {
+    const menu = document.querySelector(".player-menu");
+    if (!menu) return;
+    if (!menu.contains(e.target)) closePlayerMenu();
+}
+
+socket.on("playerJoined", (players) => {
+    currentPlayers = players || {};
+    renderPlayerList();
+});
+
+// When a player disconnects (closes tab, navigates Home, etc.) the server
+// emits `playerLeft` with the updated players dict. Without this handler the
+// lobby kept showing stale entries after a post-game Home/Play-Again split.
+socket.on("playerLeft", ({ players }) => {
+    if (players) currentPlayers = players;
+    renderPlayerList();
+});
+
+socket.on("hostChanged", ({ hostId }) => {
+    currentHostId = hostId;
+    const amHost = hostId === socket.id;
+    localStorage.setItem("roomHost", amHost ? "true" : "false");
+    startButton.disabled = !amHost;
+    renderPlayerList();
+});
+
+socket.on("kicked", async ({ reason } = {}) => {
+    await showMessage(reason || "You were removed from the room by the host.", {
+        title: "Removed from room"
+    });
+    window.location.href = './main.html';
+});
 
 socket.on("roomOptionsUpdate", options => {
     updateOptions(options)
@@ -61,182 +178,86 @@ socket.on("goToGame", function() {
     startGame()
 })
 
+// While applying a server-pushed options snapshot, suppress the emit side
+// of change handlers — otherwise programmatic dispatchEvent('change') calls
+// in updateOptions() bounce the same options back to the server and cause
+// a broadcast loop.
+let applyingServerOptions = false;
+
+function emitOptions() {
+    if (applyingServerOptions) return;
+    // Options shape (index 8 adds the H&S photosphere toggle):
+    // [roomName, gamemode, moving, zooming, timer, timerDropdown, rounds, countryISO, hsAllowPhotospheres]
+    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value, hsAllowPhotospheresCheck.checked]);
+}
+
 gameModeSelect.addEventListener("change", function () {
     const countrySelectContainer = document.getElementById("country-select-container");
     if (this.value === "countrySelect") {
       countrySelectContainer.style.display = "block";
-      populateCountryDropdown(); // Populate the dropdown when shown
+      populateCountryDropdown();
     } else {
       countrySelectContainer.style.display = "none";
     }
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-  });
-
-movingCheck.addEventListener("change", function() {
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-})
-
-zoomingCheck.addEventListener("change", function() {
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-})
-
-timer.addEventListener("change", (event) => {
-    if (event.target.checked) {
-      timerDropdown.style.display = "block"; // Show the dropdown
-    } else {
-      timerDropdown.style.display = "none"; // Hide the dropdown
+    if (hsSettings) {
+      hsSettings.style.display = this.value === "hideAndSeek" ? "block" : "none";
     }
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
+    emitOptions();
 });
 
-timerDropdown.addEventListener("change", function() {
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-})
+movingCheck.addEventListener("change", emitOptions);
+zoomingCheck.addEventListener("change", emitOptions);
+if (hsAllowPhotospheresCheck) hsAllowPhotospheresCheck.addEventListener("change", emitOptions);
 
-roundsSelect.addEventListener("change", function () {
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-})
+timer.addEventListener("change", (event) => {
+    timerDropdown.style.display = event.target.checked ? "block" : "none";
+    emitOptions();
+});
 
-countrySelect.addEventListener("change", function () {
-    socket.emit("gameOptionsUpdate", [roomName, gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value])
-})
-
-var countries = [
-    { name: "Albania", iso3: "ALB" },
-    { name: "Andorra", iso3: "AND" },
-    { name: "Argentina", iso3: "ARG" },
-    { name: "Australia", iso3: "AUS" },
-    { name: "Austria", iso3: "AUT" },
-    { name: "Bahrain", iso3: "BHR" },
-    { name: "Belarus", iso3: "BLR" },
-    { name: "Belgium", iso3: "BEL" },
-    { name: "Bosnia and Herzegovina", iso3: "BIH" },
-    { name: "Brazil", iso3: "BRA" },
-    { name: "Bulgaria", iso3: "BGR" },
-    { name: "Cambodia", iso3: "KHM" },
-    { name: "Canada", iso3: "CAN" },
-    { name: "Chile", iso3: "CHL" },
-    { name: "China", iso3: "CHN" },
-    { name: "Colombia", iso3: "COL" },
-    { name: "Costa Rica", iso3: "CRI" },
-    { name: "Croatia", iso3: "HRV" },
-    { name: "Czechia", iso3: "CZE" },
-    { name: "Denmark", iso3: "DNK" },
-    { name: "Dominican Republic", iso3: "DOM" },
-    { name: "Ecuador", iso3: "ECU" },
-    { name: "Egypt", iso3: "EGY" },
-    { name: "Estonia", iso3: "EST" },
-    { name: "Finland", iso3: "FIN" },
-    { name: "France", iso3: "FRA" },
-    { name: "Germany", iso3: "DEU" },
-    { name: "Greece", iso3: "GRC" },
-    { name: "Greenland", iso3: "GRL" },
-    { name: "Guatemala", iso3: "GTM" },
-    { name: "Hong Kong", iso3: "HKG" },
-    { name: "Hungary", iso3: "HUN" },
-    { name: "Iceland", iso3: "ISL" },
-    { name: "India", iso3: "IND" },
-    { name: "Indonesia", iso3: "IDN" },
-    { name: "Ireland", iso3: "IRL" },
-    { name: "Israel", iso3: "ISR" },
-    { name: "Italy", iso3: "ITA" },
-    { name: "Japan", iso3: "JPN" },
-    { name: "Jordan", iso3: "JOR" },
-    { name: "Kazakhstan", iso3: "KAZ" },
-    { name: "Kenya", iso3: "KEN" },
-    { name: "Korea, Republic of", iso3: "KOR" },
-    { name: "Kyrgyzstan", iso3: "KGZ" },
-    { name: "Lao People's Democratic Republic", iso3: "LAO" },
-    { name: "Latvia", iso3: "LVA" },
-    { name: "Lebanon", iso3: "LBN" },
-    { name: "Lithuania", iso3: "LTU" },
-    { name: "Luxembourg", iso3: "LUX" },
-    { name: "Macao", iso3: "MAC" },
-    { name: "Malta", iso3: "MLT" },
-    { name: "Mexico", iso3: "MEX" },
-    { name: "Mongolia", iso3: "MNG" },
-    { name: "Montenegro", iso3: "MNE" },
-    { name: "Netherlands", iso3: "NLD" },
-    { name: "New Zealand", iso3: "NZL" },
-    { name: "North Macedonia", iso3: "MKD" },
-    { name: "Norway", iso3: "NOR" },
-    { name: "Oman", iso3: "OMN" },
-    { name: "Pakistan", iso3: "PAK" },
-    { name: "Panama", iso3: "PAN" },
-    { name: "Peru", iso3: "PER" },
-    { name: "Philippines", iso3: "PHL" },
-    { name: "Poland", iso3: "POL" },
-    { name: "Portugal", iso3: "PRT" },
-    { name: "Qatar", iso3: "QAT" },
-    { name: "Romania", iso3: "ROU" },
-    { name: "Russian Federation", iso3: "RUS" },
-    { name: "Rwanda", iso3: "RWA" },
-    { name: "Saudi Arabia", iso3: "SAU" },
-    { name: "Senegal", iso3: "SEN" },
-    { name: "Singapore", iso3: "SGP" },
-    { name: "Slovakia", iso3: "SVK" },
-    { name: "Slovenia", iso3: "SVN" },
-    { name: "South Africa", iso3: "ZAF" },
-    { name: "Spain", iso3: "ESP" },
-    { name: "Sweden", iso3: "SWE" },
-    { name: "Switzerland", iso3: "CHE" },
-    { name: "Thailand", iso3: "THA" },
-    { name: "Tunisia", iso3: "TUN" },
-    { name: "Turkey", iso3: "TUR" },
-    { name: "Uganda", iso3: "UGA" },
-    { name: "Ukraine", iso3: "UKR" },
-    { name: "United Arab Emirates", iso3: "ARE" },
-    { name: "United Kingdom", iso3: "GBR" },
-    { name: "United States", iso3: "USA" },
-    { name: "Uruguay", iso3: "URY" },
-    { name: "Viet Nam", iso3: "VNM" }
-  ];
-
-function populateCountryDropdown() {
-    const countrySelect = document.getElementById("country-select");
-    countrySelect.innerHTML = ""; // Clear any existing options
-    
-    // Create the options for the dropdown
-    countries.forEach(country => {
-      const option = document.createElement("option");
-      option.value = country.iso3;  // Use the ISO 3-letter code as the value
-      option.textContent = country.name;  // Display the full country name
-      countrySelect.appendChild(option);
-    });
-}
+timerDropdown.addEventListener("change", emitOptions);
+roundsSelect.addEventListener("change", emitOptions);
+countrySelect.addEventListener("change", emitOptions);
 
 function updateOptions(options) {
-    if (gameModeSelect.value != options[1]){
-        gameModeSelect.value = options[1]
-        gameModeSelect.dispatchEvent(new Event('change'))
+    applyingServerOptions = true;
+    try {
+        if (gameModeSelect.value != options[1]) {
+            gameModeSelect.value = options[1];
+            gameModeSelect.dispatchEvent(new Event('change'));
+        }
+        movingCheck.checked = !!options[2];
+        zoomingCheck.checked = !!options[3];
+        if (timer.checked != options[4]) {
+            timer.checked = !!options[4];
+            timer.dispatchEvent(new Event('change'));
+        }
+        timerDropdown.value = options[5];
+        roundsSelect.value = options[6];
+        countrySelect.value = options[7];
+        if (hsAllowPhotospheresCheck) hsAllowPhotospheresCheck.checked = !!options[8];
+    } finally {
+        applyingServerOptions = false;
     }
-    movingCheck.checked = options[2]
-    zoomingCheck.checked = options[3]
-    if (timer.checked != options[4]){
-        timer.checked = options[4]
-        timer.dispatchEvent(new Event('change'))
-    }
-    
-    timerDropdown.value = options[5]
-    roundsSelect.value = options[6]
-    countrySelect.value = options[7]
 }
 
 function startGame(){
     var gamemode = gameModeSelect.value;  // Get the selected game mode
 
-    if(gamemode == "classic"){
+    if(gamemode === "classic"){
         localStorage.setItem("gameMode", JSON.stringify("classic"));
-    }else if(gamemode == "countrySelect"){
+    }else if(gamemode === "countrySelect"){
         localStorage.setItem("gameMode", JSON.stringify("countrySelect"));
-    }else if(gamemode == "hideAndSeek"){
+    }else if(gamemode === "hideAndSeek"){
         localStorage.setItem("gameMode", JSON.stringify("hideAndSeek"));
       }
 
     const options = {
         moving: document.getElementById("moving").checked,
         zooming: document.getElementById("zooming").checked,
-        timer: document.getElementById("timer").checked
+        timer: document.getElementById("timer").checked,
+        // H&S-specific — persisted so the game page has it before the first
+        // roomOptionsUpdate socket event fires.
+        hsAllowPhotospheres: hsAllowPhotospheresCheck ? hsAllowPhotospheresCheck.checked : false
     };
     localStorage.setItem("gameOptions", JSON.stringify(options));
 
@@ -254,7 +275,7 @@ function startGame(){
 
     localStorage.setItem("roomCode", JSON.stringify(roomName));
     
-    if (gamemode == "hideAndSeek"){
+    if (gamemode === "hideAndSeek"){
         window.location.href = 'hideAndSeek.html';
     }else{
         window.location.href = 'game.html';

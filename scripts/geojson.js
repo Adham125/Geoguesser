@@ -340,7 +340,6 @@ export async function pickRandomPoint(countryISOName) {
   }
   
   const randomPointResult = getRandomPointInPolygon(selectedPolygon);
-  //console.log(randomPointResult.geometry.coordinates)
   return [randomPointResult, countryISO, polygon];
 }
 
@@ -366,7 +365,3 @@ async function loadGeoJSON(url) {
     throw error;
   }
 }
-
-/*module.exports = {
-  pickRandomPoint,
-};*/

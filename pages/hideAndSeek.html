@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Hide And Seek!</title>
+    <link rel="icon" href="../imgs/globe.png">
+    <link rel="stylesheet" type="text/css" href="../styles/styleHideAndSeek.css" />
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script type="module" src="../scripts/hideAndSeek.js"></script>
+    <script src="../scripts/backButton.js" defer></script>
+
+    <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-DHZBWJCCDC');
+    </script>
+  </head>
+  <body>
+    <a href="./lobby.html" id="back-button">&lt; Back</a>
+
+    <!-- Map fills screen during HIDE phase; shrinks to corner during SEEK phase. -->
+    <div id="map"></div>
+
+    <!-- Street View pane; hidden during HIDE, covers screen during SEEK. -->
+    <div id="pano" class="hidden">
+      <div class="loading-spinner" id="loading-spinner"></div>
+    </div>
+
+    <!-- Phase banner top-center. -->
+    <div id="phase-banner" class="phase-banner">
+      <span class="phase-label">HIDE PHASE</span>
+      <span class="phase-sub">Pick a Street View spot</span>
+    </div>
+
+    <!-- Timer (only visible during SEEK). -->
+    <div class="timer-container">
+      <div id="timer" class="timer">00:00</div>
+    </div>
+
+    <!-- Roster / ready list (visible in HIDE, swaps to scoreboard in SEEK). -->
+    <div id="roster-panel" class="hs-panel">
+      <h3 class="hs-panel-title">Players</h3>
+      <ul id="roster-list"></ul>
+      <button id="startSeekButton" class="actionButton" style="display:none;">Start Seek Phase</button>
+    </div>
+
+    <!-- Top tab strip (HIDER's seek round) — click to switch which seeker's
+         live Street View the main #pano is mirroring. Hidden for seekers. -->
+    <div id="hider-tabs" class="hider-tabs hidden" role="tablist" aria-label="Watch seekers">
+      <span class="hider-tabs-label">Watching:</span>
+      <div id="hider-tabs-list" class="hider-tabs-list"></div>
+    </div>
+
+    <!-- Legacy spectator elements (kept in DOM but unused after the hider
+         rework — spectating now uses #pano directly with #hider-tabs). -->
+    <div id="spectator-panel" class="hs-panel spectator-panel hidden" aria-hidden="true">
+      <div id="spectator-tabs"></div>
+      <div id="spectator-pano"></div>
+      <p id="spectator-empty"></p>
+      <button id="spectator-close" class="icon-btn">×</button>
+    </div>
+    <button id="spectator-toggle" class="spectator-toggle hidden" aria-hidden="true"><span>Spectate</span></button>
+
+    <!-- Floating action panel (Lock in HIDE; Guess in SEEK). -->
+    <div id="floating-panel">
+      <button id="lockSpotButton" class="actionButton">Lock In Hiding Spot</button>
+      <button id="unlockSpotButton" class="actionButton actionButton--accent" style="display:none;">Change Spot</button>
+      <button id="guessButton" class="actionButton" style="display:none;" disabled>Click map to guess</button>
+      <!-- Host-only: force-end the game at any phase → final scoreboard. -->
+      <button id="endGameButton" class="actionButton actionButton--danger hidden">End Game</button>
+    </div>
+
+    <div id="compass" class="hidden">
+      <img id="compass-image" src="../imgs/compass-icon.png" alt="Compass" />
+    </div>
+
+    <!-- Hide → Seek transition countdown. Server-driven (hsCountdown event);
+         covers the screen with a pulse-animated number so the seek phase
+         start doesn't feel abrupt. Pointer-events: none so it never traps
+         clicks meant for the UI below. -->
+    <div id="hs-countdown" class="hs-countdown hidden" role="status" aria-live="polite">
+      <div class="hs-countdown-label">Seek phase starting</div>
+      <div class="hs-countdown-number" id="hs-countdown-number">3</div>
+    </div>
+
+    <!-- Guess picker modal (SEEK). -->
+    <div id="guess-picker" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="guess-picker-title">
+      <div class="modal-card">
+        <h3 id="guess-picker-title" class="modal-title">Who hid this spot?</h3>
+        <ul id="guess-picker-list" class="guess-list"></ul>
+        <div class="button-group">
+          <button id="guess-picker-cancel" class="actionButton">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Round reveal overlay (SEEK → REVEAL). Host gates next-round advance. -->
+    <div id="reveal-overlay" class="reveal-overlay hidden" role="status" aria-live="polite">
+      <div class="reveal-card">
+        <h3 class="reveal-title">Round <span id="reveal-round-num">1</span></h3>
+        <p class="reveal-owner">Hider was <span id="reveal-owner-name" class="player-chip">—</span></p>
+        <ul id="reveal-guesses" class="reveal-guesses"></ul>
+        <p id="reveal-countdown" class="reveal-countdown">Waiting for host…</p>
+        <div class="button-group">
+          <button id="revealNextButton" class="actionButton" style="display:none;">Next Round</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Final scoreboard (shared with classic style). -->
+    <div id="scoresMenu" class="scores-menu hidden">
+      <h2>Game Scores</h2>
+      <div id="scoresWinner" class="scores-winner"></div>
+      <div id="scoresList"></div>
+      <div class="button-group">
+        <a href="./lobby.html" id="playAgainButton" class="actionButton">Play Again</a>
+        <a href="./main.html" id="homeButton" class="actionButton actionButton--accent">Home</a>
+      </div>
+    </div>
+  </body>
+</html>

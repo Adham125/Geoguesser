@@ -7,9 +7,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script type="module" src="../scripts/game.js"></script>
+    <script src="../scripts/backButton.js" defer></script>
+
+    <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-DHZBWJCCDC');
+    </script>
   </head>
   <body>
-    <a href="./main.html" id="back-button">&lt; Back</a>
+    <a href="./lobby.html" id="back-button" data-sp-fallback="./main.html">&lt; Back</a>
     <div id="map"></div>
     <div id="pano">
       <div class="loading-spinner" id="loading-spinner"></div>
@@ -22,22 +33,31 @@
       <button id="Confirm" class="actionButton">Confirm</button>
       <button id="Next" class="actionButton">Next</button>
       <button id="Start_Location" class="actionButton">Start Location</button>
+      <button id="EndGame" class="actionButton" style="display:none;">End Game</button>
     </div>
     <div id="compass">
       <img id="compass-image" src="../imgs/compass-icon.png" alt="Compass" />
     </div>
 
     <div id="scoresMenu" class="scores-menu hidden">
-      <h2>Game Scores</h2>
+      <h2>Final Scores</h2>
+      <div id="scoresWinner" class="scores-winner"></div>
       <div id="scoresList">
         <!-- The table for scores will be dynamically inserted here -->
       </div>
       <div class="button-group">
+        <a href="./lobby.html" id="replayButton" class="actionButton" style="display:none;">Play Again</a>
         <button id="closeButton" class="actionButton">Close</button>
         <a href="./main.html" id="homeButton" class="actionButton">Home</a>
       </div>
+    </div>
 
-      
+    <div id="roundResult" class="round-result hidden">
+      <div class="round-result-header">Round result</div>
+      <div id="round-result-score" class="round-result-score">0 pts</div>
+      <div id="round-result-distance" class="round-result-distance"></div>
+      <div id="round-result-country" class="round-result-country"></div>
+      <a id="round-result-plonkit" class="round-result-plonkit" target="_blank" rel="noopener" style="display:none;"></a>
     </div>
     <div id="score-tracker">
       <div id="player-scores">

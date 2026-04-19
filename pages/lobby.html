@@ -9,6 +9,17 @@
   <link rel="stylesheet" type="text/css" href="../styles/style.css" />
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script type="module" src="../scripts/lobby.js"></script>
+  <script src="../scripts/backButton.js" defer></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
 </head>
 <body>
   <a href="./main.html" id="back-button">&lt; Back</a>
@@ -85,8 +96,21 @@
         <option value="8">8</option>
         <option value="9">9</option>
         <option value="10">10</option>
-        <option value="99999">∞</option>
+        <option value="99999" selected>∞</option>
       </select>
+    </div>
+
+    <!-- Hide & Seek-specific settings (hidden unless H&S is the selected mode). -->
+    <div id="hs-settings" style="display: none;">
+      <h3>Hide &amp; Seek Options:</h3>
+      <div class="options-container">
+        <div>
+          <label class="option">
+            <input type="checkbox" id="hsAllowPhotospheres"/>
+            Allow photospheres as hiding spots
+          </label>
+        </div>
+      </div>
     </div>
 
     <button class="actionButton" id="start-btn">Start Game</button>

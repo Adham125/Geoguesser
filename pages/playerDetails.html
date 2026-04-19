@@ -3,127 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Username and Color Selection</title>
+    <title>Player Setup — GeoGuesser</title>
+    <link rel="icon" href="../imgs/globe.png">
+    <link rel="stylesheet" href="../styles/stylesLanding.css">
+
+    <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-DHZBWJCCDC');
+    </script>
     <style>
-        #back-button {
-            position: fixed;
-            top: 10px;       /* Adjust the distance from the top */
-            left: 10px;      /* Adjust the distance from the left */
-            font-size: 18px; /* Adjust the text size */
-            color: #000000;     /* White text color (can be changed) */
-            text-decoration: none; /* Remove the underline */
-            font-weight: bold;  /* Optional: Make text bold */
-            background-color: transparent; /* No background */
-            border: none;     /* No border */
-            padding: 5px 10px; /* Padding around the text */
-            transition: color 0.3s ease; /* Smooth transition for hover effect */
-            z-index: 10;
+        /* Page-local: colour swatch input + error line. Everything else
+           inherits from stylesLanding.css + tokens.css. */
+        .pd-field {
+            text-align: left;
+            margin-bottom: var(--space-4);
         }
-
-        #back-button:hover {
-            color: #ccc; /* Change color on hover */
+        .pd-field label {
+            display: block;
+            font-family: var(--font-heading);
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--color-fg-muted);
+            margin-bottom: var(--space-2);
         }
-
-        .blurry-background {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .pd-color-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-2) var(--space-3);
+            background: var(--color-surface-2);
+            border: 1px solid var(--color-border-strong);
+            border-radius: var(--radius-md);
+        }
+        .pd-color-label {
+            flex: 1;
+            font-family: var(--font-body);
+            font-size: var(--font-size-base);
+            color: var(--color-fg);
+        }
+        /* Circular colour swatch that shows the picked colour; the real
+           input is transparent and overlaid so the click opens the picker. */
+        .pd-swatch {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+        .pd-swatch-visible {
+            display: block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--color-surface);
+            box-shadow: 0 0 0 1px var(--color-border-strong), var(--shadow-sm);
+            background-color: #2563EB;
+            pointer-events: none;
+            position: relative;
+            transition: transform var(--dur-fast) var(--ease-out),
+                        box-shadow var(--dur-fast) var(--ease-out);
+        }
+        /* Small pencil icon in the corner to make "clickable" obvious. */
+        .pd-swatch-visible::after {
+            content: "";
+            position: absolute;
+            right: -4px;
+            bottom: -4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--color-surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20h9'/><path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z'/></svg>") no-repeat center;
+            background-size: 10px 10px;
+            border: 1px solid var(--color-border-strong);
+        }
+        .pd-swatch:hover .pd-swatch-visible {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-md);
+        }
+        #color-input {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-            background-image: url('../imgs/worldmap.png');
-            background-size: cover; /* Ensures the image covers the entire background */
-            background-position: center; /* Centers the image */
-            filter: blur(8px); /* Adjust the blur intensity */
-            z-index: -1; /* Places the background behind other content */
-        }
-
-        body {
-            font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f0f0;
-        }
-
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center; /* Center the content */
-        }
-
-        label {
-            display: block; /* Make labels stack on top of inputs */
-            margin-bottom: 5px;
-        }
-
-        input[type="text"],
-        input[type="color"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; /* Include padding in width */
-        }
-
-        button {
-            background-color: #4CAF50; /* Green */
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
+            opacity: 0;
             cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        #error-message {
-            color: red;
-            margin-top: 10px;
-        }
-
-        #color-input { /* Style the color input button */
-            width: 30px; /* Adjust as needed */
-            height: 30px; /* Adjust as needed */
-            border-radius: 50%; /* Make it round */
-            padding: 0; /* Remove default padding */
-            border: none; /* Remove default border */
-            cursor: pointer; /* Make it a pointer on hover */
-            background-color: #000; /* Set a default background */
-        }
-        #color-input::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-
-        #color-input::-webkit-color-swatch {
             border: none;
+            padding: 0;
+            margin: 0;
+            z-index: 1;
+        }
+        #color-input:focus-visible + .pd-swatch-visible {
+            outline: 3px solid var(--color-ring);
+            outline-offset: 3px;
+        }
+        #error-message {
+            color: var(--color-destructive);
+            font-size: var(--font-size-sm);
+            margin: var(--space-2) 0 var(--space-3);
+            min-height: 1.2em;
+        }
+        #submit-button {
+            width: 100%;
+            margin-top: var(--space-2);
+        }
+        .pd-subtitle {
+            font-family: var(--font-body);
+            font-size: var(--font-size-sm);
+            color: var(--color-fg-muted);
+            margin: 0 0 var(--space-5);
         }
     </style>
 </head>
 <body>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script type="module" src="../scripts/pDetails.js"></script>
-    <a href="../index.html" id="back-button">&lt; Back</a>
+    <script src="../scripts/backButton.js" defer></script>
+
+    <a href="./main.html" id="back-button">&lt; Back</a>
     <div class="blurry-background"></div>
 
-    <div class="container">
-        <h2>Enter Your Username and Choose a Colour</h2>
-        <div id="error-message"></div>
-        <label for="name">Username:</label>
-        <input type="text" id="name" name="name" required>
+    <div class="landing-page">
+        <h1>Your Player</h1>
+        <p class="pd-subtitle">Pick a name and marker colour before joining a room.</p>
 
-        <div class="container">
-            <label for="color-input">Marker Color:</label>
-            <input type="color" id="color-input" name="color" value="#000000">
-
+        <div class="pd-field">
+            <label for="name">Username</label>
+            <input autocomplete="username" type="text" id="name" name="name" placeholder="e.g. Alex" required>
         </div>
+
+        <div class="pd-field">
+            <label for="color-input">Marker colour</label>
+            <div class="pd-color-row">
+                <span class="pd-color-label">Tap the swatch to change</span>
+                <span class="pd-swatch">
+                    <input type="color" id="color-input" name="color" value="#2563EB" aria-label="Marker colour">
+                    <span class="pd-swatch-visible" id="pd-swatch-visible" aria-hidden="true"></span>
+                </span>
+            </div>
+        </div>
+
+        <div id="error-message" role="alert" aria-live="polite"></div>
 
         <button id="submit-button">Enter Game</button>
     </div>
+
+    <script>
+      // Mirror the live colour onto the visible swatch (the <input type=color>
+      // is transparent & overlaid so we draw the swatch ourselves).
+      (function () {
+        const input = document.getElementById('color-input');
+        const swatch = document.getElementById('pd-swatch-visible');
+        if (!input || !swatch) return;
+        const sync = () => { swatch.style.backgroundColor = input.value; };
+        input.addEventListener('input', sync);
+        input.addEventListener('change', sync);
+        sync();
+      })();
+    </script>
 </body>
 </html>

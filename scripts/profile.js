@@ -1,82 +1,114 @@
-const usernameChangeButton = document.getElementById('username-change-btn')
-const passwordChangeButton = document.getElementById('password-change-btn')
-const emailChangeButton = document.getElementById('email-change-btn')
-const newPasswordInput = document.getElementById('new_password')
-const newPasswordOldInput = document.getElementById('confirm_password')
-const newUsernameInput = document.getElementById('username')
-const confirmPassword = document.getElementById('confirm_password_username')
-const newEmailInput = document.getElementById('email')
-const confirmPasswordEmail = document.getElementById('confirm_password_email')
-const profileTitle = document.getElementById("profileTitle")
+// Profile page: account settings + per-country stats.
+//
+// Three editable sections:
+//   1. Display Identity (username + colour) → `updatePlayerDetails` (session auth)
+//   2. Email (requires current password)
+//   3. Password (requires current password)
 
-const server = 'https://localhost'
-const socket = io(server, {
-    withCredentials: true
+import { serverURL as server } from './config.js';
+import { showMessage } from './popup.js';
+
+const displayUsernameInput   = document.getElementById('display-username');
+const displayColourInput     = document.getElementById('display-colour-input');
+const displaySwatchVisible   = document.getElementById('display-swatch-visible');
+const displayIdentityButton  = document.getElementById('display-identity-btn');
+
+const passwordChangeButton   = document.getElementById('password-change-btn');
+const emailChangeButton      = document.getElementById('email-change-btn');
+const newPasswordInput       = document.getElementById('new_password');
+const newPasswordOldInput    = document.getElementById('confirm_password');
+const newEmailInput          = document.getElementById('email');
+const confirmPasswordEmail   = document.getElementById('confirm_password_email');
+const profileTitle           = document.getElementById('profileTitle');
+
+const socket = io(server, { withCredentials: true });
+
+// Pull current identity on load: title uses the session's username, and the
+// Display Identity inputs are pre-populated from the stored profile details.
+document.addEventListener('DOMContentLoaded', () => {
+    socket.emit("validateCookie", {}, (response) => {
+        profileTitle.innerText = response && response.success
+            ? `${response.username}'s Profile`
+            : `Guest Profile`;
+    });
+    socket.emit("checkPlayerDetails", {}, (response) => {
+        if (!response) return;
+        if (response.success) {
+            if (response.username) displayUsernameInput.value = response.username;
+            if (response.colour) {
+                displayColourInput.value = response.colour;
+                if (displaySwatchVisible) displaySwatchVisible.style.backgroundColor = response.colour;
+            }
+        } else if (response.details) {
+            // Partial details (only name or colour set) — populate what's there.
+            if (response.details.username) displayUsernameInput.value = response.details.username;
+            if (response.details.colour) {
+                displayColourInput.value = response.details.colour;
+                if (displaySwatchVisible) displaySwatchVisible.style.backgroundColor = response.details.colour;
+            }
+        }
+    });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    socket.emit("validateCookie", {}, response => {
-        if (response.success){
-            profileTitle.innerText = `${response.username}'s Profile Settings`;
-        }else{
-            profileTitle.innerText = `Guest Profile`;
+// ---- Display Identity (no password required — just session auth) ----
+displayIdentityButton.addEventListener('click', () => {
+    const name = displayUsernameInput.value.trim();
+    const colour = displayColourInput.value;
+    if (!name) {
+        showMessage('Please enter a display name.', { title: 'Missing name' });
+        return;
+    }
+    socket.emit('updatePlayerDetails', { name, colour }, (response) => {
+        if (response && response.success) {
+            // Reflect the new identity in localStorage so the next lobby/game
+            // we join uses it without requiring a re-sign-in.
+            localStorage.setItem('playerName', name);
+            localStorage.setItem('playerColour', colour);
+            showMessage('Identity updated.', { title: 'Saved' });
+        } else {
+            showMessage('Could not update identity.', { title: 'Error' });
         }
-    })
-})
+    });
+});
 
+// ---- Email change ----
 emailChangeButton.addEventListener('click', () => {
     const newEmail = newEmailInput.value;
     const confirmPassword = confirmPasswordEmail.value;
 
-    socket.emit('change_player_details', { detail_type: "email", new: newEmail, oldPassword:confirmPassword }, (response) => {
-        
-        if (response.success){
-            newEmailInput.value = ""
-            confirmPasswordEmail.value = ""
+    socket.emit('change_player_details', { detail_type: "email", new: newEmail, oldPassword: confirmPassword }, async (response) => {
+        if (response.success) {
+            newEmailInput.value = "";
+            confirmPasswordEmail.value = "";
         }
-        
-        alert(response.message)
+        await showMessage(response.message || "", {
+            title: response.success ? "Email updated" : "Update failed"
+        });
+        window.location.reload();
     });
-
-    window.location.reload();
 });
 
-usernameChangeButton.addEventListener('click', () => {
-    const username = newUsernameInput.value;
-    const confirmPass = confirmPassword.value;
-
-    socket.emit('change_player_details', { detail_type: "username", new: username, oldPassword: confirmPass }, (response) => {
-        
-        if (response.success){
-            newUsernameInput.value = ""
-            confirmPassword.value = ""
-        }
-        
-        alert(response.message)
-    });
-
-    window.location.reload();
-});
-
+// ---- Password change ----
 passwordChangeButton.addEventListener('click', () => {
     const newPassword = newPasswordInput.value;
     const confirmPassword = newPasswordOldInput.value;
 
-    socket.emit('change_player_details', { detail_type: "password", new: newPassword, oldPassword:confirmPassword }, (response) => {
-        
-        if (response.success){
-            newPasswordInput.value = ""
-            newPasswordOldInput.value = ""
+    socket.emit('change_player_details', { detail_type: "password", new: newPassword, oldPassword: confirmPassword }, async (response) => {
+        if (response.success) {
+            newPasswordInput.value = "";
+            newPasswordOldInput.value = "";
         }
-        
-        alert(response.message)
+        await showMessage(response.message || "", {
+            title: response.success ? "Password updated" : "Update failed"
+        });
+        window.location.reload();
     });
-
-    window.location.reload();
 });
 
+// ---- Stats map ----
 var map = L.map('map').setView([20, 0], 2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+// Dark tile set to match the site's dark-mode design.
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 19
@@ -101,7 +133,7 @@ const iso3ToFullName = {
 };
 
 // Assuming the rounds data is provided directly
-var roundsData = await getRoundsData(); 
+var roundsData = await getRoundsData();
 
 // Process the rounds data and generate stats
 var countryStats = processRoundsData(roundsData);
@@ -122,7 +154,7 @@ function processRoundsData(roundsData) {
         var score = round.score;
         var distance = round.distance;
         var timeTaken = round.timeTaken;
-        
+
         // Initialize country stats if they don't exist
         if (!countryStats[locationCountryISO]) {
             countryStats[locationCountryISO] = {
@@ -136,13 +168,13 @@ function processRoundsData(roundsData) {
                 mistakeCountries: {}
             };
         }
-        
+
         // Increment total rounds and calculate total score, distance, and time
         countryStats[locationCountryISO].totalRounds++;
         countryStats[locationCountryISO].totalScore += score;
         countryStats[locationCountryISO].totalDistance += distance;
         countryStats[locationCountryISO].totalTime += timeTaken;
-        
+
         // Track best score and best distance
         if (score > countryStats[locationCountryISO].bestScore) {
             countryStats[locationCountryISO].bestScore = score;
@@ -150,7 +182,7 @@ function processRoundsData(roundsData) {
         if (distance < countryStats[locationCountryISO].bestDistance) {
             countryStats[locationCountryISO].bestDistance = distance;
         }
-        
+
         // Track mistakes
         if (guessCountryISO !== locationCountryISO && guessCountryISO != "Not Found") {
             if (!countryStats[locationCountryISO].mistakeCountries[guessCountryISO]) {
@@ -169,9 +201,9 @@ function processRoundsData(roundsData) {
 
         // Sort mistakes and get the top 3
         var sortedMistakes = Object.entries(stats.mistakeCountries)
-            .sort((a, b) => b[1] - a[1]) 
+            .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
-            .map(([iso, count]) => `${iso3ToFullName[iso] || iso} (${count})`); 
+            .map(([iso, count]) => `${iso3ToFullName[iso] || iso} (${count})`);
         stats.topMistakes = sortedMistakes.join(', ') || 'None';
     });
     return countryStats;
@@ -179,16 +211,13 @@ function processRoundsData(roundsData) {
 
 // Placeholder function for fetching rounds data (replace with actual data)
 async function getRoundsData() {
-    
-
-    const response = await new Promise((resolve, reject) => {
+    const response = await new Promise((resolve) => {
         socket.emit("getUserGameHistory", {}, response => {
-            if (response.success){
-                resolve(response)
-            }
-        })
+            if (response.success) resolve(response);
+            else resolve({ games: {} });
+        });
     });
-    return response.games
+    return response.games;
 }
 
 function addGeoJSONLayer(geojson, countryStats) {
@@ -199,31 +228,29 @@ function addGeoJSONLayer(geojson, countryStats) {
             var averageScore = stats ? stats.averageScore : 0;
             var colour;
 
-            if (averageScore <= 1250) {  // 0 - 1/4 of 5000
-                colour = 'rgba(255, 0, 0, 0.7)'; // Red
-            } else if (averageScore <= 2500) { // 1/4 - 2/4 of 5000
-                colour = 'rgba(255, 140, 0, 0.7)'; // Dark Orange
-            } else if (averageScore <= 3750) { // 2/4 - 3/4 of 5000
-                colour = 'rgba(255, 255, 0, 0.7)'; // Yellow
-            } else { // Above 3/4 of 5000
-                colour = 'rgba(0, 255, 0, 0.7)'; // Green
+            if (averageScore <= 1250) {
+                colour = 'rgba(220, 38, 38, 0.7)';  // red
+            } else if (averageScore <= 2500) {
+                colour = 'rgba(245, 158, 11, 0.7)'; // amber
+            } else if (averageScore <= 3750) {
+                colour = 'rgba(234, 179, 8, 0.7)';  // yellow
+            } else {
+                colour = 'rgba(16, 185, 129, 0.7)'; // green
             }
 
             return {
-                colour: '#3388ff',
+                color: '#64748B',
                 weight: 1,
                 fillColor: colour,
-                fillOpacity: stats ? 0.5 : 0 // Hide fill if no data
+                fillOpacity: stats ? 0.55 : 0
             };
         },
         onEachFeature: function(feature, layer) {
             layer.on('click', function() {
-                //console.log(feature)
                 var isoCode = feature.properties.color_code;
                 var stats = countryStats[isoCode];
                 var countryName = feature.properties.name;
 
-                // Display the country stats
                 if (stats) {
                     showCountryStats(countryName, stats, feature.geometry.coordinates);
                 } else {
@@ -235,28 +262,26 @@ function addGeoJSONLayer(geojson, countryStats) {
 }
 
 function showCountryStats(countryName, stats, boundaries) {
-    //document.getElementById('map').classList.add('hidden');
     document.getElementById('country-stats').classList.remove('hidden');
     document.getElementById('country-details').innerHTML = `
         <p><strong>${countryName}</strong></p>
-        <p>Total Rounds: ${stats.totalRounds}</p>
-        <p>Average Score: ${stats.averageScore}</p>
-        <p>Average Distance: ${stats.averageDistance}</p>
-        <p>Average Time Taken: ${stats.averageTime}</p>
-        <p>Best Score: ${stats.bestScore}</p>
-        <p>Best Distance: ${stats.bestDistance}</p>
-        <p>Top 3 Mistaken Countries: ${stats.topMistakes}</p>
+        <p>Total Rounds: ${stats.totalRounds ?? '—'}</p>
+        <p>Average Score: ${stats.averageScore !== undefined ? Math.round(stats.averageScore) : '—'}</p>
+        <p>Average Distance: ${stats.averageDistance !== undefined ? Math.round(stats.averageDistance) + ' km' : '—'}</p>
+        <p>Average Time: ${stats.averageTime !== undefined ? Math.round(stats.averageTime) + ' s' : '—'}</p>
+        <p>Best Score: ${stats.bestScore ?? '—'}</p>
+        <p>Best Distance: ${stats.bestDistance !== undefined && stats.bestDistance !== Infinity ? Math.round(stats.bestDistance) + ' km' : '—'}</p>
+        <p>Top 3 Mistaken Countries: ${stats.topMistakes ?? '—'}</p>
     `;
-    
+
     if (window.currentBoundaryLayer) {
         map.removeLayer(window.currentBoundaryLayer);
     }
 
-    // Check if boundary data is available and draw it
     if (boundaries) {
         window.currentBoundaryLayer = L.geoJSON(boundaries, {
             style: {
-                color: 'red',
+                color: '#F59E0B',
                 weight: 3,
                 fillOpacity: 0.2
             }
@@ -265,6 +290,5 @@ function showCountryStats(countryName, stats, boundaries) {
 }
 
 window.showWorldMap = function() {
-    //document.getElementById('map').classList.remove('hidden');
     document.getElementById('country-stats').classList.add('hidden');
 }
