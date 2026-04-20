@@ -748,3 +748,55 @@ a.actionButton {
     padding: 6px 14px;
   }
 }
+
+/* Ko-fi support pill — shared styling across every placement; kept
+   identical to stylesLanding.css so lobby.html (which loads both
+   stylesheets) renders the same pill as the scoresMenu usage. */
+.kofi-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-fg-muted);
+  background: rgba(17, 28, 54, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  white-space: nowrap;
+  animation: kofi-pulse-in 600ms var(--ease-out) 400ms both;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.kofi-link:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: rgba(245, 158, 11, 0.10);
+  transform: translateY(-1px);
+}
+.kofi-link:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+.kofi-link svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+@keyframes kofi-pulse-in {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.scores-menu .kofi-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+}

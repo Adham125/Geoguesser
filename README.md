@@ -57,14 +57,22 @@ To Join a Room:
 
 3- Score will be calculated based on the area of the country you selected (will need to be much closer to the location to achieve a high score).
 
+## Hide And Seek Mode (Multiplayer)
+
+1- One player is the Hider and picks a Street View spot on the map during the HIDE phase.
+
+2- Once everyone is locked in, the SEEK phase starts — the other players hunt for the Hider's location in Street View before the timer runs out.
+
+3- The Hider watches the seekers' live views from tabs at the top of the screen.
+
 # Local Setup
 
-To download and run the code locally you will need to have <!-- [npm](https://nodejs.org/en/download) -->Jekyll, Ruby, RebyGems, and GCC/Make on your machine.
+To download and run the code locally you will need to have Jekyll, Ruby, RubyGems, and GCC/Make on your machine.
 
 ```sh
 gem install bundler jekyll
 bundle install
-bundle exec jekyll serve 
+bundle exec jekyll serve
 ```
 
-The multiplayer server is hosted privately on AWS and is not currently public.
+This runs the frontend only — singleplayer modes (Classic and Country Select) work standalone. The multiplayer server is hosted privately, so multiplayer and login require the production site at [adhamgames.co.uk](http://adhamgames.co.uk/).

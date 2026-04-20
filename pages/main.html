@@ -111,6 +111,95 @@
     </div>
   </div>
 
+  <div class="kofi-footer-fixed">
+    <a class="kofi-link" href="https://ko-fi.com/adham125" target="_blank" rel="noopener noreferrer" aria-label="Support GeoGuesser on Ko-fi">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <span>Support on Ko-fi</span>
+    </a>
+  </div>
+
+  <div id="kofi-popup" class="kofi-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="kofi-popup-title" aria-describedby="kofi-popup-body" hidden>
+    <div class="kofi-popup-card">
+      <svg class="kofi-popup-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <h2 class="kofi-popup-title" id="kofi-popup-title">Hey &mdash; solo dev here</h2>
+      <p class="kofi-popup-body" id="kofi-popup-body">GeoGuesser is a one-person indie project. I build it in my spare time and cover the server bills myself &mdash; if it's brought you some fun, a small tip keeps it running.</p>
+      <div class="kofi-popup-actions">
+        <a href="https://ko-fi.com/adham125" target="_blank" rel="noopener noreferrer" class="kofi-popup-cta" id="kofi-popup-cta">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Tip on Ko-fi
+        </a>
+        <button type="button" class="kofi-popup-later" id="kofi-popup-later">Not right now</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="../scripts/main.js"></script>
+  <script>
+    // Ko-fi popup — cookie-backed (main.js clears localStorage on load).
+    // Two options: tip CTA or "Not right now" dismiss. Dismiss sets a
+    // short cooldown so the popup comes back later — no permanent mute.
+    (function () {
+      var COOKIE_NEXT = 'kofi_next';
+      var DELAY_MS = 2500;
+      var PROBABILITY = 0.25;
+      var DAY = 24 * 60 * 60 * 1000;
+      var WEEK = 7 * DAY;
+      var MONTH = 30 * DAY;
+
+      function getCookie(name) {
+        var parts = document.cookie ? document.cookie.split('; ') : [];
+        for (var i = 0; i < parts.length; i++) {
+          var kv = parts[i].split('=');
+          if (kv[0] === name) return decodeURIComponent(kv.slice(1).join('='));
+        }
+        return null;
+      }
+      function setCookie(name, value, ms) {
+        var d = new Date(Date.now() + ms);
+        document.cookie = name + '=' + encodeURIComponent(value)
+          + '; expires=' + d.toUTCString()
+          + '; path=/; SameSite=Lax';
+      }
+      function bump(ms) { setCookie(COOKIE_NEXT, String(Date.now() + ms), ms + DAY); }
+      function shouldShow() {
+        var next = parseInt(getCookie(COOKIE_NEXT) || '0', 10);
+        if (Date.now() < next) return false;
+        return Math.random() < PROBABILITY;
+      }
+
+      var popup = document.getElementById('kofi-popup');
+      var cta = document.getElementById('kofi-popup-cta');
+      var later = document.getElementById('kofi-popup-later');
+      if (!popup || !cta || !later) return;
+
+      var lastFocus = null;
+      function hide() {
+        popup.setAttribute('hidden', '');
+        document.body.style.overflow = '';
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      }
+      function show() {
+        lastFocus = document.activeElement;
+        popup.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+        cta.focus();
+      }
+
+      later.addEventListener('click', function () { bump(WEEK); hide(); });
+      cta.addEventListener('click', function () { bump(MONTH); setTimeout(hide, 150); });
+      popup.addEventListener('click', function (e) { if (e.target === popup) { bump(WEEK); hide(); } });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !popup.hasAttribute('hidden')) { bump(WEEK); hide(); }
+      });
+
+      if (shouldShow()) {
+        setTimeout(function () { show(); bump(WEEK); }, DELAY_MS);
+      }
+    })();
+  </script>
 </body>
 </html>
