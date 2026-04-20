@@ -44,14 +44,13 @@ export const countries = [
   { name: "Jordan", iso3: "JOR" },
   { name: "Kazakhstan", iso3: "KAZ" },
   { name: "Kenya", iso3: "KEN" },
-  { name: "Korea, Republic of", iso3: "KOR" },
   { name: "Kyrgyzstan", iso3: "KGZ" },
-  { name: "Lao People's Democratic Republic", iso3: "LAO" },
+  { name: "Laos", iso3: "LAO" },
   { name: "Latvia", iso3: "LVA" },
   { name: "Lebanon", iso3: "LBN" },
   { name: "Lithuania", iso3: "LTU" },
   { name: "Luxembourg", iso3: "LUX" },
-  { name: "Macao", iso3: "MAC" },
+  { name: "Macau", iso3: "MAC" },
   { name: "Malta", iso3: "MLT" },
   { name: "Mexico", iso3: "MEX" },
   { name: "Mongolia", iso3: "MNG" },
@@ -69,7 +68,7 @@ export const countries = [
   { name: "Portugal", iso3: "PRT" },
   { name: "Qatar", iso3: "QAT" },
   { name: "Romania", iso3: "ROU" },
-  { name: "Russian Federation", iso3: "RUS" },
+  { name: "Russia", iso3: "RUS" },
   { name: "Rwanda", iso3: "RWA" },
   { name: "Saudi Arabia", iso3: "SAU" },
   { name: "Senegal", iso3: "SEN" },
@@ -77,6 +76,7 @@ export const countries = [
   { name: "Slovakia", iso3: "SVK" },
   { name: "Slovenia", iso3: "SVN" },
   { name: "South Africa", iso3: "ZAF" },
+  { name: "South Korea", iso3: "KOR" },
   { name: "Spain", iso3: "ESP" },
   { name: "Sweden", iso3: "SWE" },
   { name: "Switzerland", iso3: "CHE" },
@@ -89,7 +89,7 @@ export const countries = [
   { name: "United Kingdom", iso3: "GBR" },
   { name: "United States", iso3: "USA" },
   { name: "Uruguay", iso3: "URY" },
-  { name: "Viet Nam", iso3: "VNM" }
+  { name: "Vietnam", iso3: "VNM" }
 ];
 
 export function populateCountryDropdown(selectId = "country-select") {

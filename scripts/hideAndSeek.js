@@ -26,11 +26,11 @@ const phaseSub           = phaseBanner.querySelector(".phase-sub");
 const rosterPanel        = document.getElementById("roster-panel");
 const rosterList         = document.getElementById("roster-list");
 const rosterTitle        = rosterPanel.querySelector(".hs-panel-title");
-const startSeekButton    = document.getElementById("startSeekButton");
 const endGameButton      = document.getElementById("endGameButton");
 const lockSpotButton     = document.getElementById("lockSpotButton");
 const unlockSpotButton   = document.getElementById("unlockSpotButton");
 const guessButton        = document.getElementById("guessButton");
+const hsReturnToStartButton = document.getElementById("hsReturnToStartButton");
 // Legacy floating spectator panel — hidden after the hider-tabs rework.
 const spectatorToggle    = document.getElementById("spectator-toggle");
 const spectatorPanel     = document.getElementById("spectator-panel");
@@ -70,6 +70,7 @@ let phase = "hide";                 // hide | seek | reveal | final
 let roomPlayers = {};               // { sid: { name, colour } } — kept in sync from hsRoster / hsRoundStart
 let readySet = new Set();           // who's locked in, during HIDE
 let myHidingSpot = null;            // { panoId, lat, lng, heading, pitch } after we lock
+let myHidingSpotMarker = null;      // visual confirmation pin dropped on the hide-phase map
 // H&S rule from lobby options[8]; seeded from localStorage.gameOptions so the
 // pegman source filter is applied before the first roomOptionsUpdate arrives,
 // then authoritatively overwritten by the socket event.
@@ -397,6 +398,7 @@ function enterHidePhase() {
   // Wipe per-round state so rounds 2+ start from a clean slate (on round 1
   // these are already at their defaults, so the clears are no-ops).
   myHidingSpot = null;
+  if (myHidingSpotMarker) { myHidingSpotMarker.map = null; myHidingSpotMarker = null; }
   myGuessPosition = null;
   myGuessLocked = false;
   myGuessMarker = null;
@@ -730,6 +732,7 @@ function updateFloatingPanelForPhase() {
     lockSpotButton.style.display = alreadyLocked ? "none" : "inline-flex";
     unlockSpotButton.style.display = alreadyLocked ? "inline-flex" : "none";
     guessButton.style.display = "none";
+    if (hsReturnToStartButton) hsReturnToStartButton.style.display = "none";
   } else if (phase === "seek") {
     lockSpotButton.style.display = "none";
     unlockSpotButton.style.display = "none";
@@ -748,10 +751,16 @@ function updateFloatingPanelForPhase() {
       guessButton.disabled = true;
       guessButton.textContent = "Click map to guess";
     }
+    // Seekers always get the Start Location escape hatch; the hider's
+    // pano is a spectator feed and doesn't have a fixed start to return to.
+    if (hsReturnToStartButton) {
+      hsReturnToStartButton.style.display = isOwnerThisRound ? "none" : "inline-flex";
+    }
   } else {
     lockSpotButton.style.display = "none";
     unlockSpotButton.style.display = "none";
     guessButton.style.display = "none";
+    if (hsReturnToStartButton) hsReturnToStartButton.style.display = "none";
   }
 }
 
@@ -798,13 +807,6 @@ function renderRoster() {
     }
     rosterList.appendChild(li);
   }
-  // Start-Seek button is host-only, hide-phase-only, only enabled once >=2 players have locked.
-  if (phase === "hide" && hosting) {
-    startSeekButton.style.display = "inline-flex";
-    startSeekButton.disabled = readySet.size < 2;
-  } else {
-    startSeekButton.style.display = "none";
-  }
 }
 
 // Scoreboard cache so we can render between hsRoundReveal events.
@@ -840,6 +842,13 @@ lockSpotButton.addEventListener("click", () => {
   };
   const commit = () => {
     myHidingSpot = spot;
+    if (myHidingSpotMarker) { myHidingSpotMarker.map = null; }
+    // Drop a player-coloured pin at the locked position so the hider has
+    // visual confirmation when they exit Street View back to the world map.
+    myHidingSpotMarker = createMarker(
+      { lat: spot.lat, lng: spot.lng },
+      playerColour || "#2563EB"
+    );
     socket.emit("hsLockHidingSpot", { room: roomName, ...myHidingSpot });
     updateFloatingPanelForPhase();
   };
@@ -874,13 +883,9 @@ lockSpotButton.addEventListener("click", () => {
 
 unlockSpotButton.addEventListener("click", () => {
   myHidingSpot = null;
+  if (myHidingSpotMarker) { myHidingSpotMarker.map = null; myHidingSpotMarker = null; }
   socket.emit("hsUnlockHidingSpot", { room: roomName });
   updateFloatingPanelForPhase();
-});
-
-startSeekButton.addEventListener("click", () => {
-  if (!hosting) return;
-  socket.emit("hsStartSeekPhase", { room: roomName });
 });
 
 // End Game — host-only escape hatch that jumps straight to the final
@@ -894,6 +899,21 @@ if (endGameButton) {
     });
     if (!ok) return;
     socket.emit("hsEndGame", { room: roomName });
+  });
+}
+
+// Seeker-only: jump the pano back to the round's starting pano + pose.
+// Mirrors classic's "Start Location" button. Doesn't reset the guess pin —
+// the seeker can navigate away and back without losing their committed guess.
+if (hsReturnToStartButton) {
+  hsReturnToStartButton.addEventListener("click", () => {
+    if (phase !== "seek" || isOwnerThisRound) return;
+    if (!seekStreetView || !pendingRoundPanoId) return;
+    seekStreetView.setPano(pendingRoundPanoId);
+    seekStreetView.setPov({
+      heading: (pendingRoundPose && pendingRoundPose.heading) || 0,
+      pitch: (pendingRoundPose && pendingRoundPose.pitch) || 0
+    });
   });
 }
 

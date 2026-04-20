@@ -40,11 +40,12 @@
       <div id="timer" class="timer">00:00</div>
     </div>
 
-    <!-- Roster / ready list (visible in HIDE, swaps to scoreboard in SEEK). -->
+    <!-- Roster / ready list (visible in HIDE, swaps to scoreboard in SEEK).
+         Seek phase auto-starts once every player has locked, so no manual
+         host button is needed here. -->
     <div id="roster-panel" class="hs-panel">
       <h3 class="hs-panel-title">Players</h3>
       <ul id="roster-list"></ul>
-      <button id="startSeekButton" class="actionButton" style="display:none;">Start Seek Phase</button>
     </div>
 
     <!-- Top tab strip (HIDER's seek round) — click to switch which seeker's
@@ -69,6 +70,8 @@
       <button id="lockSpotButton" class="actionButton">Lock In Hiding Spot</button>
       <button id="unlockSpotButton" class="actionButton actionButton--accent" style="display:none;">Change Spot</button>
       <button id="guessButton" class="actionButton" style="display:none;" disabled>Click map to guess</button>
+      <!-- Seeker-only (SEEK phase): jump the pano back to the round's start. -->
+      <button id="hsReturnToStartButton" class="actionButton" style="display:none;">Start Location</button>
       <!-- Host-only: force-end the game at any phase → final scoreboard. -->
       <button id="endGameButton" class="actionButton actionButton--danger hidden">End Game</button>
     </div>
