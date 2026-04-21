@@ -137,18 +137,38 @@
     </div>
   </div>
 
+  <div id="kofi-popup-2" class="kofi-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="kofi-popup-2-title" hidden>
+    <div class="kofi-popup-card">
+      <svg class="kofi-popup-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <h2 class="kofi-popup-title" id="kofi-popup-2-title">Pretty please?</h2>
+      <div class="kofi-popup-actions">
+        <a href="https://ko-fi.com/adham125" target="_blank" rel="noopener noreferrer" class="kofi-popup-cta" id="kofi-popup-2-cta">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Actually yes I'll Tip
+        </a>
+        <button type="button" class="kofi-popup-later" id="kofi-popup-2-dismiss">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="../scripts/main.js"></script>
   <script>
     // Ko-fi popup — cookie-backed (main.js clears localStorage on load).
-    // Two options: tip CTA or "Not right now" dismiss. Dismiss sets a
-    // short cooldown so the popup comes back later — no permanent mute.
+    // Main popup: tip CTA or "Not right now" dismiss. Dismiss sets a short
+    // cooldown so the popup comes back later — no permanent mute.
+    // On the first "Not right now" ever, a one-time "Pretty please?"
+    // secondary popup appears (tracked via the kofi_pp_seen cookie).
     (function () {
       var COOKIE_NEXT = 'kofi_next';
+      var COOKIE_PP_SEEN = 'kofi_pp_seen';
       var DELAY_MS = 2500;
       var PROBABILITY = 0.25;
-      var DAY = 24 * 60 * 60 * 1000;
+      var HOUR = 60 * 60 * 1000;
+      var DAY = 24 * HOUR;
+      var TWO_HOURS = 2 * HOUR;
       var WEEK = 7 * DAY;
-      var MONTH = 30 * DAY;
 
       function getCookie(name) {
         var parts = document.cookie ? document.cookie.split('; ') : [];
@@ -171,33 +191,67 @@
         return Math.random() < PROBABILITY;
       }
 
-      var popup = document.getElementById('kofi-popup');
-      var cta = document.getElementById('kofi-popup-cta');
-      var later = document.getElementById('kofi-popup-later');
-      if (!popup || !cta || !later) return;
+      var main = document.getElementById('kofi-popup');
+      var mainCta = document.getElementById('kofi-popup-cta');
+      var mainLater = document.getElementById('kofi-popup-later');
+      var pp = document.getElementById('kofi-popup-2');
+      var ppCta = document.getElementById('kofi-popup-2-cta');
+      var ppDismiss = document.getElementById('kofi-popup-2-dismiss');
+      if (!main || !mainCta || !mainLater || !pp || !ppCta || !ppDismiss) return;
 
       var lastFocus = null;
-      function hide() {
-        popup.setAttribute('hidden', '');
-        document.body.style.overflow = '';
+      function restoreFocus() {
         if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+        lastFocus = null;
+        document.body.style.overflow = '';
       }
-      function show() {
+      function openMain() {
         lastFocus = document.activeElement;
-        popup.removeAttribute('hidden');
         document.body.style.overflow = 'hidden';
-        cta.focus();
+        main.removeAttribute('hidden');
+        mainCta.focus();
+      }
+      function closeMain() {
+        main.setAttribute('hidden', '');
+        // Only restore focus if the secondary isn't taking over.
+        if (pp.hasAttribute('hidden')) restoreFocus();
+      }
+      function openPrettyPlease() {
+        // Mark seen on first appearance so it doesn't show again for a week.
+        setCookie(COOKIE_PP_SEEN, '1', WEEK);
+        main.setAttribute('hidden', '');
+        pp.removeAttribute('hidden');
+        ppCta.focus();
+      }
+      function closePrettyPlease() {
+        pp.setAttribute('hidden', '');
+        restoreFocus();
       }
 
-      later.addEventListener('click', function () { bump(WEEK); hide(); });
-      cta.addEventListener('click', function () { bump(MONTH); setTimeout(hide, 150); });
-      popup.addEventListener('click', function (e) { if (e.target === popup) { bump(WEEK); hide(); } });
+      mainLater.addEventListener('click', function () {
+        bump(TWO_HOURS);
+        if (!getCookie(COOKIE_PP_SEEN)) openPrettyPlease();
+        else closeMain();
+      });
+      mainCta.addEventListener('click', function () { bump(WEEK); setTimeout(closeMain, 150); });
+      main.addEventListener('click', function (e) {
+        if (e.target === main) { bump(TWO_HOURS); closeMain(); }
+      });
+
+      ppDismiss.addEventListener('click', function () { bump(TWO_HOURS); closePrettyPlease(); });
+      ppCta.addEventListener('click', function () { bump(WEEK); setTimeout(closePrettyPlease, 150); });
+      pp.addEventListener('click', function (e) {
+        if (e.target === pp) { bump(TWO_HOURS); closePrettyPlease(); }
+      });
+
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !popup.hasAttribute('hidden')) { bump(WEEK); hide(); }
+        if (e.key !== 'Escape') return;
+        if (!pp.hasAttribute('hidden')) { bump(TWO_HOURS); closePrettyPlease(); }
+        else if (!main.hasAttribute('hidden')) { bump(TWO_HOURS); closeMain(); }
       });
 
       if (shouldShow()) {
-        setTimeout(function () { show(); bump(WEEK); }, DELAY_MS);
+        setTimeout(function () { openMain(); bump(TWO_HOURS); }, DELAY_MS);
       }
     })();
   </script>

@@ -7,6 +7,8 @@ This is a free singleplayer and multiplayer GeoGuesser game! You get dropped in 
 
 Made by: [Adham125](https://github.com/Adham125)
 
+If you enjoy it, you can [tip me on Ko-fi](https://ko-fi.com/adham125) to help cover the server bills.
+
 # Controls
 
 - "Confirm" button locks in your guess.
