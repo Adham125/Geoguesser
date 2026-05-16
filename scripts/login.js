@@ -6,7 +6,16 @@ const passwordButton = document.getElementById("password-input");
 const loginButton = document.getElementById("login");
 const signUpButton = document.getElementById('signUp-button');
 const guestButton = document.getElementById('loginStatus');
-localStorage.clear()
+// Preserve spotify_* keys through the cross-page reset — see main.js for the rationale.
+(() => {
+  const keep = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('spotify_')) keep[k] = localStorage.getItem(k);
+  }
+  localStorage.clear();
+  for (const k in keep) localStorage.setItem(k, keep[k]);
+})();
 
 const socket = io(server, {
     withCredentials: true

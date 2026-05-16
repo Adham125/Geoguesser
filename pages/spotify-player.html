@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="../imgs/globe.png">
+  <title>GeoGuesser Music Player</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <style>
+    /* This page is a persistent popup. It hosts the Spotify Web Playback SDK
+       so audio survives navigation in the main GeoGuesser tab. Every page
+       in the main tab loads the small Spotify widget, which talks to this
+       popup via BroadcastChannel('geoguesser-spotify'). */
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: linear-gradient(180deg, #07120E 0%, var(--color-bg) 100%);
+      color: var(--color-fg);
+      font-family: var(--font-body);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: var(--space-5) var(--space-5) var(--space-4);
+      box-sizing: border-box;
+    }
+    .pl-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+    .pl-logo {
+      width: 22px;
+      height: 22px;
+      color: #1DB954;
+    }
+    .pl-title {
+      font-family: var(--font-heading);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: var(--font-size-sm);
+      color: var(--color-fg);
+      flex: 1;
+    }
+    .pl-status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-fg-muted);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.15);
+      transition: background var(--dur-fast) var(--ease-out),
+                  box-shadow var(--dur-fast) var(--ease-out);
+    }
+    .pl-status-dot[data-state="ready"]   { background: #1DB954; box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2); }
+    .pl-status-dot[data-state="playing"] { background: #1DB954; box-shadow: 0 0 0 6px rgba(29, 185, 84, 0.2); animation: pulse 2s infinite; }
+    .pl-status-dot[data-state="error"]   { background: var(--color-destructive); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2); }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 6px rgba(29, 185, 84, 0.2); }
+      50%      { box-shadow: 0 0 0 10px rgba(29, 185, 84, 0.05); }
+    }
+
+    .pl-art-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 320px;
+      margin: 0 auto var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface-2) center/cover no-repeat;
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    .pl-art-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-fg-muted);
+      opacity: 0.4;
+    }
+    .pl-art-empty svg { width: 64px; height: 64px; }
+
+    .pl-meta {
+      text-align: center;
+      margin-bottom: var(--space-4);
+      min-height: 48px;
+    }
+    .pl-track {
+      font-family: var(--font-heading);
+      font-size: var(--font-size-lg);
+      color: var(--color-fg);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pl-artist {
+      font-size: var(--font-size-sm);
+      color: var(--color-fg-muted);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pl-empty-state {
+      text-align: center;
+      color: var(--color-fg-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.5;
+    }
+
+    .pl-notice {
+      margin-top: auto;
+      padding: var(--space-3) var(--space-4);
+      background: rgba(29, 185, 84, 0.08);
+      border: 1px solid rgba(29, 185, 84, 0.25);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-xs);
+      color: var(--color-fg-muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .pl-notice strong { color: var(--color-fg); }
+    .pl-link {
+      color: #1DB954;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .pl-link:hover { text-decoration: underline; }
+
+    /* Error / re-auth state */
+    .pl-error {
+      padding: var(--space-4);
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: var(--radius-md);
+      color: var(--color-fg);
+      font-size: var(--font-size-sm);
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+  <header class="pl-header">
+    <svg class="pl-logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm5.5 17.3a.75.75 0 0 1-1 .25c-2.7-1.6-6.1-2-10.1-1.1a.75.75 0 1 1-.3-1.5c4.4-1 8.2-.6 11.2 1.3.4.2.5.6.2 1Zm1.5-3.4a.94.94 0 0 1-1.3.3c-3.1-1.9-7.8-2.4-11.4-1.3a.94.94 0 1 1-.6-1.8c4.2-1.3 9.4-.7 13 1.5.4.3.5.9.3 1.3Zm.1-3.6c-3.7-2.2-9.8-2.4-13.3-1.3a1.13 1.13 0 1 1-.7-2.2c4-1.2 10.8-1 15 1.5.5.3.7 1 .4 1.5-.3.5-1 .7-1.4.5Z"/></svg>
+    <span class="pl-title">GeoGuesser Music</span>
+    <span class="pl-status-dot" id="status-dot" data-state="idle" aria-label="Player status"></span>
+  </header>
+
+  <div class="pl-art-wrap" id="art">
+    <div class="pl-art-empty" id="art-empty">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+    </div>
+  </div>
+
+  <div class="pl-meta">
+    <h1 class="pl-track" id="track">Connecting…</h1>
+    <p class="pl-artist" id="artist"></p>
+  </div>
+
+  <div class="pl-notice">
+    <strong>Keep this window open.</strong><br>
+    Use the music widget in the main GeoGuesser tab to pick songs and control playback. Closing this window stops playback.
+  </div>
+
+
+  <script>
+    // Persistent Spotify player. Loads the Web Playback SDK, registers a
+    // device, listens on BroadcastChannel('geoguesser-spotify') for control
+    // messages from the GeoGuesser tab(s), and broadcasts state updates
+    // back so the widget UI stays in sync.
+
+    const KEY = {
+      access: 'spotify_access_token',
+      refresh: 'spotify_refresh_token',
+      expiresAt: 'spotify_expires_at',
+    };
+    const CHANNEL_NAME = 'geoguesser-spotify';
+    const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+    const SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
+    // Maximum SDK volume even when the widget slider is at 100%. Spotify's
+    // SDK at full volume is mastered loud relative to other browser audio,
+    // so this knob attenuates the whole range. 0.10 ≈ -20 dB from SDK max.
+    const VOLUME_SCALE = 0.10;
+    const scaleVolume = (v) => Math.max(0, Math.min(1, Number(v) || 0)) * VOLUME_SCALE;
+
+    const channel = new BroadcastChannel(CHANNEL_NAME);
+    let clientId = null;
+    let player = null;
+    let deviceId = null;
+    let isPremium = null;
+    let lastState = null;
+    let lastEmittedPosition = 0;
+
+    const dot = document.getElementById('status-dot');
+    const art = document.getElementById('art');
+    const artEmpty = document.getElementById('art-empty');
+    const trackEl = document.getElementById('track');
+    const artistEl = document.getElementById('artist');
+
+    function setStatus(state) { dot.setAttribute('data-state', state); }
+    function setEmpty(text) {
+      trackEl.textContent = text;
+      artistEl.textContent = '';
+      art.style.backgroundImage = '';
+      artEmpty.hidden = false;
+    }
+
+    function getAccessToken() {
+      return localStorage.getItem(KEY.access);
+    }
+    function tokensFresh() {
+      const exp = parseInt(localStorage.getItem(KEY.expiresAt) || '0', 10);
+      return Date.now() < exp - 30_000;
+    }
+    async function refreshAccessToken() {
+      const refresh = localStorage.getItem(KEY.refresh);
+      if (!refresh || !clientId) return false;
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refresh,
+        client_id: clientId,
+      });
+      try {
+        const r = await fetch(TOKEN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        if (!r.ok) return false;
+        const data = await r.json();
+        localStorage.setItem(KEY.access, data.access_token);
+        localStorage.setItem(KEY.expiresAt, String(Date.now() + data.expires_in * 1000));
+        if (data.refresh_token) localStorage.setItem(KEY.refresh, data.refresh_token);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function loadSDK() {
+      return new Promise((resolve, reject) => {
+        if (window.Spotify) return resolve();
+        window.onSpotifyWebPlaybackSDKReady = resolve;
+        const s = document.createElement('script');
+        s.src = SDK_URL;
+        s.async = true;
+        s.onerror = () => reject(new Error('SDK load failed'));
+        document.head.appendChild(s);
+      });
+    }
+
+    function broadcast(message) {
+      try { channel.postMessage(message); } catch {}
+    }
+
+    function emitState() {
+      if (!lastState) {
+        broadcast({ type: 'state', current: null, position: 0, duration: 0, shuffle: false, repeat: 'off', deviceId, isPremium });
+        return;
+      }
+      broadcast({
+        type: 'state',
+        current: lastState,
+        position: lastState.position || 0,
+        duration: lastState.duration || 0,
+        shuffle: !!lastState.shuffle,
+        repeat: lastState.repeat_mode === 2 ? 'track' : lastState.repeat_mode === 1 ? 'context' : 'off',
+        deviceId,
+        isPremium,
+      });
+    }
+
+    // Auto-init flow (no button click). preflight() and SDK setup all
+    // run on page load. Audio playback ultimately depends on the popup
+    // being focused — the widget calls popupWindow.focus() before the
+    // first play command to grant the activation needed for the SDK's
+    // audio element. After this init runs, we push the popup behind the
+    // opener so it's not in the user's face.
+    async function init() {
+      try {
+        const r = await fetch('/api/spotify/config', { credentials: 'same-origin' });
+        const j = await r.json();
+        if (!j.enabled) {
+          setStatus('error');
+          setEmpty('Spotify not configured');
+          return;
+        }
+        clientId = j.clientId;
+      } catch {
+        setStatus('error');
+        setEmpty('Could not reach server');
+        return;
+      }
+      if (!getAccessToken()) {
+        setStatus('error');
+        setEmpty('Not signed in. Connect Spotify in the main tab.');
+        return;
+      }
+      // Premium check up front so free users get a clear message rather than
+      // a silent SDK account_error later.
+      try {
+        if (!tokensFresh()) await refreshAccessToken();
+        const meRes = await fetch('https://api.spotify.com/v1/me', {
+          headers: { 'Authorization': `Bearer ${getAccessToken()}` },
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          isPremium = me.product === 'premium';
+          if (!isPremium) {
+            setStatus('error');
+            setEmpty('Spotify Premium required for in-browser playback');
+            broadcast({ type: 'premium-required' });
+            return;
+          }
+        }
+      } catch {}
+
+      try {
+        await loadSDK();
+      } catch {
+        setStatus('error');
+        setEmpty('Could not load Spotify SDK');
+        return;
+      }
+
+      player = new window.Spotify.Player({
+        name: 'GeoGuesser Web Player',
+        getOAuthToken: async (cb) => {
+          if (!tokensFresh()) await refreshAccessToken();
+          cb(getAccessToken());
+        },
+        // Constructor volume isn't scaled by VOLUME_SCALE — this is raw SDK.
+        // Only matters until the widget syncs its stored value on 'ready'.
+        volume: 0.02,
+      });
+
+      player.addListener('ready', ({ device_id }) => {
+        deviceId = device_id;
+        setStatus('ready');
+        setEmpty('Ready — pick a song in the main tab');
+        emitState();
+        broadcast({ type: 'ready', deviceId, isPremium });
+        // Try the SDK's autoplay-priming call once the audio element exists.
+        // If it fails (no user gesture in this window yet), the widget falls
+        // back to focusing this popup right before the first play command.
+        tryActivate();
+      });
+      player.addListener('not_ready', () => {
+        deviceId = null;
+        setStatus('idle');
+      });
+      player.addListener('player_state_changed', (s) => {
+        if (!s) return;
+        lastState = s;
+        const track = s.track_window?.current_track;
+        if (track) {
+          artEmpty.hidden = true;
+          const url = track.album?.images?.[0]?.url;
+          art.style.backgroundImage = url ? `url("${url}")` : '';
+          trackEl.textContent = track.name;
+          artistEl.textContent = (track.artists || []).map(a => a.name).join(', ');
+        }
+        setStatus(s.paused ? 'ready' : 'playing');
+        emitState();
+      });
+      player.addListener('initialization_error', ({ message }) => {
+        console.warn('[player] init_error', message);
+        setStatus('error');
+      });
+      player.addListener('authentication_error', ({ message }) => {
+        console.warn('[player] auth_error', message);
+        setStatus('error');
+        setEmpty('Sign-in expired — reconnect in main tab');
+        broadcast({ type: 'auth-required' });
+      });
+      player.addListener('account_error', () => {
+        isPremium = false;
+        setStatus('error');
+        setEmpty('Spotify Premium required');
+        broadcast({ type: 'premium-required' });
+      });
+
+      player.connect();
+    }
+
+    // ---------- IPC ----------
+
+    channel.addEventListener('message', async (e) => {
+      const msg = e.data;
+      if (!msg || typeof msg !== 'object') return;
+      switch (msg.type) {
+        case 'ping':
+          broadcast({ type: 'pong', deviceId, isPremium });
+          if (lastState) emitState();
+          break;
+        case 'state-request':
+          emitState();
+          break;
+        case 'pause':
+          if (player) player.pause();
+          break;
+        case 'resume':
+          if (player) player.resume();
+          break;
+        case 'toggle':
+          if (player) player.togglePlay();
+          break;
+        case 'next':
+          if (player) player.nextTrack();
+          break;
+        case 'prev':
+          if (player) player.previousTrack();
+          break;
+        case 'volume':
+          // Widget sends raw 0-1 slider value; we apply VOLUME_SCALE so the
+          // slider's full range only spans up to the ceiling, not SDK max.
+          if (player && typeof msg.value === 'number') player.setVolume(scaleVolume(msg.value));
+          break;
+        case 'seek':
+          if (player && typeof msg.position === 'number') player.seek(msg.position);
+          break;
+        case 'focus':
+          // Widget on a fresh page (no direct popup reference) asking us to
+          // bring ourselves forward. Browsers may ignore self-focus without
+          // a user gesture, but worst case it's a no-op — and crucially it
+          // doesn't disturb playback.
+          try { window.focus(); } catch {}
+          break;
+        // play / shuffle / repeat are issued by the widget directly to the
+        // Spotify Web API (it has the access token too). The player just
+        // observes them via player_state_changed and broadcasts the result.
+      }
+    });
+
+    // Let the widget know we're closing so it can show "Open Player" again.
+    window.addEventListener('beforeunload', () => {
+      broadcast({ type: 'closing' });
+    });
+
+    function tryActivate() {
+      if (player && typeof player.activateElement === 'function') {
+        try {
+          const p = player.activateElement();
+          if (p && typeof p.then === 'function') p.catch(() => {});
+        } catch {}
+      }
+    }
+
+    // Kick off SDK initialisation immediately. The actual autoplay-policy
+    // gate (popup window focus) is satisfied by the widget right before the
+    // first play command — see openPlayerPopup and ensureActiveDevice in
+    // scripts/spotify.js.
+    init();
+
+    // Push the popup behind the opener so it doesn't sit in the user's face
+    // on launch. Browser focus management is finicky — the popup tries
+    // multiple times, and the main tab also tries to refocus itself from
+    // its side. One of these attempts should win the race.
+    function pushBehindOpener() {
+      try { window.opener && window.opener.focus(); } catch {}
+      try { window.blur(); } catch {}
+    }
+    pushBehindOpener();
+    [50, 150, 350, 700, 1200].forEach((d) => setTimeout(pushBehindOpener, d));
+  </script>
+</body>
+</html>

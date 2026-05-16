@@ -25,7 +25,18 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 });
 
-localStorage.clear()
+// Preserve spotify_* keys through the cross-page reset so OAuth tokens and
+// user preferences survive page navigation. Without this, every link the
+// user follows from main.html would force them to reconnect Spotify.
+(() => {
+  const keep = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('spotify_')) keep[k] = localStorage.getItem(k);
+  }
+  localStorage.clear();
+  for (const k in keep) localStorage.setItem(k, keep[k]);
+})();
 
 roundsSelect.value = "99999"
 
