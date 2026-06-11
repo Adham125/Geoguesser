@@ -37,6 +37,19 @@
       <button class="catan-btn primary" id="ready-btn">Ready ✓</button>
       <p class="form-error" id="error-message"></p>
 
+      <div class="map-section">
+        <div class="map-row" id="map-row">
+          <button class="map-pill" data-map="classic">Classic</button>
+          <button class="map-pill" data-map="beginner">Beginner</button>
+          <button class="map-pill" data-map="ring">Ring</button>
+          <button class="map-pill" data-map="random">Random</button>
+        </div>
+        <div class="map-preview">
+          <svg id="map-preview-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <p class="map-hint" id="map-hint"></p>
+      </div>
+
       <p class="lobby-hint">Share the room code — the game needs <b>3–4 players</b>, all ready.</p>
       <div id="roster"></div>
       <button class="catan-btn ok big" id="start-btn" disabled>Start Game</button>

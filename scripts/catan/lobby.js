@@ -5,6 +5,7 @@
 // kickPlayer) plus catan:ready / catan:start.
 
 import { serverURL as server } from "../config.js";
+import { createRenderer } from "./render.js";
 
 const roomCode = localStorage.getItem("catanRoomId");
 if (!roomCode) window.location.href = "./home.html";
@@ -26,6 +27,55 @@ let players = {};
 let hostId = null;
 let ready = false;
 let joined = false;
+
+// --- map picker --------------------------------------------------------
+const mapRow = document.getElementById("map-row");
+const previewSvg = document.getElementById("map-preview-svg");
+const mapHint = document.getElementById("map-hint");
+let currentMapId = "classic";
+
+function updateMapPills() {
+  const isHost = socket.id === hostId;
+  for (const btn of mapRow.querySelectorAll(".map-pill")) {
+    btn.classList.toggle("selected", btn.getAttribute("data-map") === currentMapId);
+    btn.disabled = !isHost;
+  }
+  mapHint.textContent = isHost
+    ? "Pick a map — click again to reroll it."
+    : "The host picks the map.";
+}
+
+function renderMapPreview(board) {
+  if (!board) { previewSvg.innerHTML = ""; return; }
+  // Reuse the game-board renderer; viewBox scaling shrinks it for free.
+  // Hit targets are never armed, so the preview is inert.
+  const renderer = createRenderer(previewSvg, board);
+  renderer.render({
+    occupied: { vertices: {}, edges: {} },
+    robberHex: board.robberHex,
+    seats: [],
+  });
+}
+
+mapRow.addEventListener("click", e => {
+  const btn = e.target.closest(".map-pill");
+  if (!btn || socket.id !== hostId) return;
+  socket.emit("catan:mapSelect", { roomCode, mapId: btn.getAttribute("data-map") });
+});
+
+socket.on("catan:mapUpdate", ({ mapId, board }) => {
+  currentMapId = mapId;
+  updateMapPills();
+  renderMapPreview(board);
+});
+
+socket.emit("catan:getMap", { roomCode }, res => {
+  if (!res) return;
+  currentMapId = res.mapId;
+  updateMapPills();
+  renderMapPreview(res.board);
+});
+// ------------------------------------------------------------------------
 
 const DEFAULT_COLOURS = ["#D64545", "#2E86AB", "#E8A33D", "#7B5EA7", "#4F9D5D", "#C2569B"];
 colourInput.value = localStorage.getItem("catanColour")
@@ -118,6 +168,7 @@ function renderRoster() {
   } else {
     startBtn.textContent = "Start Game";
   }
+  updateMapPills(); // host knowledge can change with the roster
 }
 
 roster.addEventListener("click", e => {
