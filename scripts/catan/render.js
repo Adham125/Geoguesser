@@ -36,6 +36,9 @@ function roadSegment(eid, inset = 13) {
 // Probability pips under a number token (6 and 8 get five).
 const PIPS = { 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 8: 5, 9: 4, 10: 3, 11: 2, 12: 1 };
 
+// Resource glyphs shown above the number token (matches the hand cards).
+const RESOURCE_ICONS = { wood: "🪵", brick: "🧱", sheep: "🐑", wheat: "🌾", ore: "🪨" };
+
 function settlementPoints(c, s = 11) {
   // Little house: roof apex, eaves, floor.
   return pointsAttr([
@@ -60,11 +63,24 @@ function cityPoints(c, s = 12) {
   ]);
 }
 
-export function createRenderer(svg, board) {
+export function createRenderer(svg, board, opts = {}) {
   svg.innerHTML = "";
   const hexKeys = board.hexes.map(h => `${h.q},${h.r}`);
-  const vb = boardViewBox(hexKeys);
-  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.width} ${vb.height}`);
+  const baseVB = boardViewBox(hexKeys);
+  svg.setAttribute("viewBox", `${baseVB.x} ${baseVB.y} ${baseVB.width} ${baseVB.height}`);
+
+  // Transparent drag surface beneath every layer so pan gestures starting
+  // over empty sea still register (only filled shapes emit pointer events).
+  if (opts.interactive) {
+    el("rect", {
+      x: baseVB.x - baseVB.width * 2,
+      y: baseVB.y - baseVB.height * 2,
+      width: baseVB.width * 5,
+      height: baseVB.height * 5,
+      fill: "transparent",
+      class: "pan-surface",
+    }, svg);
+  }
 
   // Layer order: sand frame, tiles, tokens, roads, robber, buildings, hits.
   const gFrame = el("g", { class: "layer-frame" }, svg);
@@ -95,15 +111,18 @@ export function createRenderer(svg, board) {
       const c = hexCenter(key);
       const hot = h.number === 6 || h.number === 8;
       const g = el("g", { class: `num-token${hot ? " num-hot" : ""}`, "data-hex": key }, gTokens);
-      el("circle", { cx: c.x, cy: c.y, r: 17, class: "num-circle" }, g);
-      const t = el("text", { x: c.x, y: c.y + 1.5, class: "num-text" }, g);
+      // Resource icon sits above the number token.
+      const icon = el("text", { x: c.x, y: c.y - 21, class: "tile-icon" }, g);
+      icon.textContent = RESOURCE_ICONS[h.resource] || "";
+      el("circle", { cx: c.x, cy: c.y + 9, r: 14, class: "num-circle" }, g);
+      const t = el("text", { x: c.x, y: c.y + 10.5, class: "num-text" }, g);
       t.textContent = h.number;
       const pips = PIPS[h.number] || 0;
       for (let i = 0; i < pips; i++) {
         el("circle", {
           cx: c.x + (i - (pips - 1) / 2) * 4.4,
-          cy: c.y + 9.5,
-          r: 1.4,
+          cy: c.y + 17.5,
+          r: 1.3,
           class: "num-pip",
         }, g);
       }
@@ -134,8 +153,13 @@ export function createRenderer(svg, board) {
     }, gHits);
   }
 
+  const panZoom = opts.interactive ? enablePanZoom(svg, baseVB) : null;
+
   let handlers = {};
   gHits.addEventListener("click", (e) => {
+    // A pan/pinch gesture ends with a click — swallow it so dragging the
+    // board never places a piece.
+    if (panZoom && panZoom.consumedDrag()) return;
     const t = e.target.closest(".hit");
     if (!t || !t.classList.contains("hit-active")) return;
     const id = t.getAttribute("data-id");
@@ -195,5 +219,112 @@ export function createRenderer(svg, board) {
     setTargets,
     clearTargets,
     setHandlers(h) { handlers = h; },
+    zoomIn() { panZoom && panZoom.zoomBy(1 / 1.25); },
+    zoomOut() { panZoom && panZoom.zoomBy(1.25); },
+    resetView() { panZoom && panZoom.reset(); },
+  };
+}
+
+// Pan (drag / one-finger) + zoom (wheel / pinch / buttons) over the SVG
+// viewBox. Pure view transform — never touches the board geometry, so the
+// server-authoritative coordinates are untouched. `consumedDrag()` lets the
+// click handler distinguish a tap-to-place from a drag-to-pan.
+function enablePanZoom(svg, baseVB) {
+  const view = { x: baseVB.x, y: baseVB.y, w: baseVB.width, h: baseVB.height };
+  const MIN_W = baseVB.width * 0.35; // most zoomed in
+  const MAX_W = baseVB.width * 1.3;  // most zoomed out
+  const pointers = new Map();
+  let panStart = null;   // { cx, cy, view, a, d }
+  let pinchStart = null; // { dist, view, anchor }
+  let moved = false;
+
+  function apply() {
+    svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+  }
+
+  function clientToSvg(cx, cy) {
+    const pt = svg.createSVGPoint();
+    pt.x = cx; pt.y = cy;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  // Zoom so `anchor` (an SVG-space point) stays under the same pixel.
+  function zoomTo(targetW, anchor, from = view) {
+    const newW = Math.max(MIN_W, Math.min(MAX_W, targetW));
+    const factor = newW / from.w;
+    view.w = from.w * factor;
+    view.h = from.h * factor;
+    view.x = anchor.x - (anchor.x - from.x) * factor;
+    view.y = anchor.y - (anchor.y - from.y) * factor;
+    apply();
+  }
+
+  svg.addEventListener("pointerdown", (e) => {
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = false;
+    if (pointers.size === 1) {
+      const ctm = svg.getScreenCTM();
+      panStart = { cx: e.clientX, cy: e.clientY, view: { ...view }, a: ctm.a, d: ctm.d };
+      pinchStart = null;
+    } else if (pointers.size === 2) {
+      const [p1, p2] = [...pointers.values()];
+      pinchStart = {
+        dist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
+        view: { ...view },
+        anchor: clientToSvg((p1.x + p2.x) / 2, (p1.y + p2.y) / 2),
+      };
+      panStart = null;
+    }
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size >= 2 && pinchStart) {
+      const [p1, p2] = [...pointers.values()];
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      if (dist > 0) zoomTo(pinchStart.view.w * (pinchStart.dist / dist), pinchStart.anchor, pinchStart.view);
+      moved = true;
+      return;
+    }
+    if (panStart) {
+      const dx = e.clientX - panStart.cx;
+      const dy = e.clientY - panStart.cy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      view.x = panStart.view.x - dx / panStart.a;
+      view.y = panStart.view.y - dy / panStart.d;
+      apply();
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinchStart = null;
+    if (pointers.size === 0) {
+      panStart = null;
+    } else {
+      const [only] = [...pointers.values()];
+      const ctm = svg.getScreenCTM();
+      panStart = { cx: only.x, cy: only.y, view: { ...view }, a: ctm.a, d: ctm.d };
+    }
+  }
+  window.addEventListener("pointerup", endPointer);
+  window.addEventListener("pointercancel", endPointer);
+
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    zoomTo(view.w * (e.deltaY > 0 ? 1.12 : 1 / 1.12), clientToSvg(e.clientX, e.clientY));
+  }, { passive: false });
+
+  return {
+    consumedDrag: () => moved,
+    zoomBy(factor) {
+      zoomTo(view.w * factor, { x: view.x + view.w / 2, y: view.y + view.h / 2 });
+    },
+    reset() {
+      view.x = baseVB.x; view.y = baseVB.y; view.w = baseVB.width; view.h = baseVB.height;
+      apply();
+    },
   };
 }

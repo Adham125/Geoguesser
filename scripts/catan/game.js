@@ -28,6 +28,9 @@ const els = {
   roomChip: $("room-chip"),
   statusStrip: $("status-strip"),
   board: $("board"),
+  zoomIn: $("zoom-in"),
+  zoomOut: $("zoom-out"),
+  zoomReset: $("zoom-reset"),
   players: $("players"),
   die1: $("die-1"),
   die2: $("die-2"),
@@ -134,8 +137,11 @@ function applyState(newPub, newMine) {
     const firstBoard = !renderer;
     pub = newPub;
     if (firstBoard) {
-      renderer = createRenderer(els.board, pub.board);
+      renderer = createRenderer(els.board, pub.board, { interactive: true });
       renderer.setHandlers({ onVertex, onEdge, onHex });
+      els.zoomIn.addEventListener("click", () => renderer.zoomIn());
+      els.zoomOut.addEventListener("click", () => renderer.zoomOut());
+      els.zoomReset.addEventListener("click", () => renderer.resetView());
     }
   }
   if (newMine) mine = newMine;
