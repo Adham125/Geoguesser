@@ -138,11 +138,30 @@
   color: var(--c-accent);
 }
 
-.roster-row .kick-btn {
-  border: none;
-  background: none;
-  color: var(--c-danger);
+.roster-row .ready-mark {
   font-weight: 800;
+  font-size: 1.05rem;
+  width: 22px;
+  text-align: center;
+}
+.roster-row .ready-mark.is-ready { color: var(--c-ok); }
+.roster-row .ready-mark.not-ready { color: var(--c-danger); }
+
+.roster-row .kick-btn {
+  border: 1px solid var(--c-panel-border);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--c-ink-muted);
+  font-family: var(--f-body);
+  font-weight: 800;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
   cursor: pointer;
-  font-size: 1rem;
+}
+.roster-row .kick-btn:hover {
+  color: #FFF;
+  background: var(--c-danger);
+  border-color: var(--c-danger);
 }

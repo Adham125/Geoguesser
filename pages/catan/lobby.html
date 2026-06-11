@@ -28,19 +28,16 @@
   </header>
 
   <main class="catan-center">
-    <div class="catan-card" id="details-card">
-      <h2>Take a seat</h2>
+    <div class="catan-card" id="lobby-card">
+      <h2>Get ready</h2>
       <div class="details-row">
         <input type="text" id="name-input" placeholder="Your name" maxlength="20" autocomplete="off">
         <input type="color" id="colour-input" value="#D64545" title="Your colour">
       </div>
-      <button class="catan-btn primary" id="sit-btn">Sit down</button>
+      <button class="catan-btn primary" id="ready-btn">Ready ✓</button>
       <p class="form-error" id="error-message"></p>
-    </div>
 
-    <div class="catan-card" id="lobby-card" hidden>
-      <h2>Waiting for settlers…</h2>
-      <p class="lobby-hint">Share the room code — the game needs <b>3–4 players</b>.</p>
+      <p class="lobby-hint">Share the room code — the game needs <b>3–4 players</b>, all ready.</p>
       <div id="roster"></div>
       <button class="catan-btn ok big" id="start-btn" disabled>Start Game</button>
       <p class="form-error" id="lobby-error"></p>

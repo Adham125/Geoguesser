@@ -9,6 +9,7 @@
 
 import { serverURL as server } from "../config.js";
 import { createRenderer } from "./render.js";
+import { playSound } from "./sounds.js";
 
 const RESOURCES = ["wood", "brick", "sheep", "wheat", "ore"];
 const RESOURCE_ICONS = { wood: "🪵", brick: "🧱", sheep: "🐑", wheat: "🌾", ore: "🪨" };
@@ -60,6 +61,32 @@ let mySeat = null;
 let renderer = null;
 let armedBuild = null;       // 'road' | 'settlement' | 'city' while picking a spot
 let pendingRobberHex = null; // chosen hex awaiting victim pick
+let soundSeq = null;         // last log seq we've played sounds for
+
+const EVENT_SOUNDS = {
+  roll: "roll",
+  build: "build",
+  placeSettlement: "build",
+  placeRoad: "build",
+  bankTrade: "trade",
+  moveRobber: "robber",
+  discard: "discard",
+  gameOver: "win",
+};
+
+function playLogSounds() {
+  if (soundSeq === null) {
+    // First snapshot (page load / rejoin): don't replay history.
+    soundSeq = pub.seq;
+    return;
+  }
+  for (const e of pub.log) {
+    if (e.seq <= soundSeq) continue;
+    const fx = EVENT_SOUNDS[e.type];
+    if (fx) playSound(fx);
+  }
+  soundSeq = pub.seq;
+}
 
 // ---------------------------------------------------------------------------
 // transport
@@ -114,6 +141,7 @@ function applyState(newPub, newMine) {
   if (newMine) mine = newMine;
   if (!pub) return;
 
+  if (newPub) playLogSounds();
   renderer.render(pub);
   renderPlayers();
   renderDice();
