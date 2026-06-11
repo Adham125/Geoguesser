@@ -16,7 +16,7 @@ if (roomName == null){
     socket.emit("checkPlayerDetails", {}, (response) => {
         if (!response) return;
         if (response.success){
-            window.location.href = "main.html";
+            window.location.href = "hub.html";
         } else if (response.message === "Not All Player details available") {
             if (response.details && response.details.colour){
                 colorInput.value = response.details.colour
@@ -61,7 +61,7 @@ submitButton.addEventListener("click", () => {
     if(roomName == null){
         socket.emit("updatePlayerDetails", {colour: colour, name: name}, (response) => {
             if (response.success){
-                window.location.href = "main.html";
+                window.location.href = "hub.html";
             }
         })
         
@@ -72,8 +72,13 @@ submitButton.addEventListener("click", () => {
     
 });
 
-socket.on("goToRoom", roomName => {
-    window.location.href = "lobby.html"; 
+socket.on("goToRoom", (roomName, gameType) => {
+    // Catan rooms have their own join flow (pages/catan/home.html).
+    if (gameType === "catan") {
+        errorMessage.textContent = "That code is a Catan room — join it from the Catan page.";
+        return;
+    }
+    window.location.href = "lobby.html";
 })
 
 

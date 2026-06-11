@@ -1,0 +1,56 @@
+/* Game-selection hub — layered on top of stylesLanding.css. */
+
+.hub-page {
+  width: min(92vw, 640px);
+}
+
+.hub-cards {
+  display: flex;
+  gap: var(--space-5);
+  justify-content: center;
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hub-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(100%, 250px);
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-fg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.hub-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.hub-card-art {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+
+.hub-card-name {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.04em;
+}
+
+.hub-card-desc {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-muted);
+  line-height: 1.4;
+}

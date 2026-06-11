@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="../imgs/globe.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adham Games</title>
+  <link rel="stylesheet" href="../styles/stylesLanding.css">
+  <link rel="stylesheet" href="../styles/stylesHub.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
+</head>
+<body>
+  <div class="blurry-background"></div>
+
+  <div id="top-right-container">
+    <button id="loginStatus">Guest Mode</button>
+    <button id="login-button">Logout</button>
+  </div>
+
+  <div class="landing-page hub-page">
+    <h1>Choose Your Game</h1>
+
+    <div class="hub-cards">
+      <a class="hub-card" href="./main.html">
+        <img class="hub-card-art" src="../imgs/globe.png" alt="">
+        <span class="hub-card-name">GeoGuesser</span>
+        <span class="hub-card-desc">Get dropped anywhere on Earth and guess where you are.</span>
+      </a>
+
+      <a class="hub-card" href="./catan/home.html" id="catan-card">
+        <svg class="hub-card-art" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="#E8B14E" stroke="#B07D23" stroke-width="4"/>
+          <polygon points="50,22 73,35 73,65 50,78 27,65 27,35" fill="#7FB069" stroke="#5C8A4A" stroke-width="3"/>
+          <circle cx="50" cy="50" r="11" fill="#F5EFDC" stroke="#B07D23" stroke-width="2.5"/>
+          <text x="50" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="#8C2B2B">8</text>
+        </svg>
+        <span class="hub-card-name">Catan</span>
+        <span class="hub-card-desc">Settle the island — gather, build and trade your way to victory.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="kofi-footer-fixed">
+    <a class="kofi-link" href="https://ko-fi.com/adham125" target="_blank" rel="noopener noreferrer" aria-label="Support on Ko-fi">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <span>Support on Ko-fi</span>
+    </a>
+  </div>
+
+  <script type="module" src="../scripts/hub.js"></script>
+</body>
+</html>

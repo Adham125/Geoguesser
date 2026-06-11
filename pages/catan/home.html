@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="../../imgs/globe.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catan — Play</title>
+  <link rel="stylesheet" href="../../styles/catan-tokens.css">
+  <link rel="stylesheet" href="../../styles/catan.css">
+  <link rel="stylesheet" href="../../styles/catan-lobby.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
+</head>
+<body class="catan">
+  <header class="catan-topbar">
+    <a class="catan-brand" href="../hub.html">← All Games</a>
+    <div class="turn-banner"></div>
+  </header>
+
+  <main class="catan-center">
+    <div class="catan-hero">
+      <svg class="catan-hero-hex" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="#E9D8A6" stroke="#D4BC82" stroke-width="3"/>
+        <polygon points="50,16 79,33 79,67 50,84 21,67 21,33" fill="#3E8948"/>
+        <circle cx="50" cy="50" r="13" fill="#FAF3DD" stroke="#D4BC82" stroke-width="2"/>
+        <text x="50" y="56" text-anchor="middle" font-size="16" font-weight="bold" fill="#C0392B">8</text>
+      </svg>
+      <h1>CATAN</h1>
+      <p>Gather, build, and trade your way to 10 points.<br>3–4 players, online with friends.</p>
+    </div>
+
+    <div class="catan-card">
+      <button class="catan-btn primary big" id="create-btn">Create Game</button>
+      <div class="join-row">
+        <input type="text" id="join-code" placeholder="Room code" maxlength="8" autocomplete="off">
+        <button class="catan-btn" id="join-btn">Join</button>
+      </div>
+      <p class="form-error" id="error-message"></p>
+    </div>
+  </main>
+
+  <script type="module" src="../../scripts/catan/home.js"></script>
+</body>
+</html>

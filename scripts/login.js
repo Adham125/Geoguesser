@@ -22,7 +22,7 @@ const socket = io(server, {
 });
 
 guestButton.addEventListener('click', (event) => {
-    window.location.href = './pages/main.html'
+    window.location.href = './pages/hub.html'
 });
 
 loginButton.addEventListener('click', (event) => {

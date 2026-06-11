@@ -1,0 +1,48 @@
+/* Catan design tokens — a completely separate experience from the
+   Geoguesser pages. Warm flat "tabletop" light theme, twosheep-style.
+   Everything is scoped under body.catan so nothing leaks either way. */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap');
+
+body.catan {
+  /* Sea + island */
+  --c-sea: #4DA3C7;
+  --c-sea-deep: #3C8BAD;
+  --c-sand: #E9D8A6;
+  --c-sand-edge: #D4BC82;
+
+  /* Resource tiles */
+  --c-wood: #3E8948;
+  --c-brick: #C4683B;
+  --c-sheep: #94C25B;
+  --c-wheat: #E5B83C;
+  --c-ore: #8D99AE;
+  --c-desert: #DCC894;
+
+  /* UI surfaces */
+  --c-panel: #FBF6EC;
+  --c-panel-2: #F1E8D5;
+  --c-panel-border: #D8C9A8;
+  --c-ink: #3A2E22;
+  --c-ink-muted: #8A7B65;
+
+  /* Actions */
+  --c-accent: #E07A2F;
+  --c-accent-hover: #C9661F;
+  --c-ok: #4F9D5D;
+  --c-ok-hover: #3F8A4D;
+  --c-danger: #C0392B;
+  --c-highlight: #FFD75E;
+
+  /* Type */
+  --f-display: "Fredoka", "Trebuchet MS", sans-serif;
+  --f-body: "Nunito Sans", "Segoe UI", sans-serif;
+
+  /* Shape */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-pill: 999px;
+  --shadow-piece: 0 2px 0 rgba(58, 46, 34, 0.18), 0 6px 14px rgba(58, 46, 34, 0.14);
+  --shadow-float: 0 10px 30px rgba(31, 58, 71, 0.25);
+}

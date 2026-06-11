@@ -1,0 +1,148 @@
+/* Catan home + lobby screens (game screen styles live in catan.css). */
+
+.catan-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 20px;
+}
+
+.catan-hero {
+  text-align: center;
+  color: #FFF;
+  text-shadow: 0 2px 0 rgba(31, 58, 71, 0.35);
+}
+
+.catan-hero-hex {
+  width: 110px;
+  height: 110px;
+  filter: drop-shadow(0 8px 16px rgba(31, 58, 71, 0.35));
+}
+
+.catan-hero h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 4px 0 6px;
+}
+
+.catan-hero p {
+  margin: 0;
+  font-weight: 600;
+  opacity: 0.92;
+  line-height: 1.5;
+}
+
+.catan-card {
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+  padding: 24px 28px;
+  width: min(92vw, 360px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+
+.catan-btn.big {
+  font-size: 1.1rem;
+  padding: 13px 22px;
+}
+
+.join-row, .details-row {
+  display: flex;
+  gap: 8px;
+}
+
+.catan-card input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--f-body);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--c-ink);
+  background: #FFF;
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--r-pill);
+  padding: 10px 16px;
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.catan-card input[type="text"]:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+
+.catan-card input[type="color"] {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--r-md);
+  background: none;
+  cursor: pointer;
+}
+
+.form-error {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--c-danger);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.lobby-hint {
+  margin: 0;
+  color: var(--c-ink-muted);
+  font-size: 0.9rem;
+}
+
+#roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c-panel-2);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+}
+
+.roster-row .player-swatch { flex-shrink: 0; }
+
+.roster-row .roster-name {
+  flex: 1;
+  text-align: left;
+  font-family: var(--f-display);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roster-row .host-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+}
+
+.roster-row .kick-btn {
+  border: none;
+  background: none;
+  color: var(--c-danger);
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 1rem;
+}

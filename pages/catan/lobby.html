@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="../../imgs/globe.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catan — Lobby</title>
+  <link rel="stylesheet" href="../../styles/catan-tokens.css">
+  <link rel="stylesheet" href="../../styles/catan.css">
+  <link rel="stylesheet" href="../../styles/catan-lobby.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
+</head>
+<body class="catan">
+  <header class="catan-topbar">
+    <a class="catan-brand" href="./home.html">← Catan</a>
+    <div class="turn-banner"></div>
+    <div class="room-chip" id="room-chip"></div>
+  </header>
+
+  <main class="catan-center">
+    <div class="catan-card" id="details-card">
+      <h2>Take a seat</h2>
+      <div class="details-row">
+        <input type="text" id="name-input" placeholder="Your name" maxlength="20" autocomplete="off">
+        <input type="color" id="colour-input" value="#D64545" title="Your colour">
+      </div>
+      <button class="catan-btn primary" id="sit-btn">Sit down</button>
+      <p class="form-error" id="error-message"></p>
+    </div>
+
+    <div class="catan-card" id="lobby-card" hidden>
+      <h2>Waiting for settlers…</h2>
+      <p class="lobby-hint">Share the room code — the game needs <b>3–4 players</b>.</p>
+      <div id="roster"></div>
+      <button class="catan-btn ok big" id="start-btn" disabled>Start Game</button>
+      <p class="form-error" id="lobby-error"></p>
+    </div>
+  </main>
+
+  <script type="module" src="../../scripts/catan/lobby.js"></script>
+</body>
+</html>
