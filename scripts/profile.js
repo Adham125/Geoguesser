@@ -6,7 +6,7 @@
 //   3. Password (requires current password)
 
 import { serverURL as server } from './config.js';
-import { showMessage } from './popup.js';
+import { showMessage, showToast } from './popup.js';
 
 const displayUsernameInput   = document.getElementById('display-username');
 const displayColourInput     = document.getElementById('display-colour-input');
@@ -27,9 +27,19 @@ const socket = io(server, { withCredentials: true });
 // Display Identity inputs are pre-populated from the stored profile details.
 document.addEventListener('DOMContentLoaded', () => {
     socket.emit("validateCookie", {}, (response) => {
-        profileTitle.innerText = response && response.success
-            ? `${response.username}'s Profile`
-            : `Guest Profile`;
+        if (response && response.success) {
+            profileTitle.innerText = `${response.username}'s Profile`;
+        } else {
+            profileTitle.innerText = 'Guest Profile';
+            document.querySelectorAll('.profile-section').forEach(s => s.remove());
+            const subtitle = document.querySelector('.profile-subtitle');
+            if (subtitle) subtitle.remove();
+            const msg = document.createElement('p');
+            msg.className = 'profile-subtitle';
+            msg.style.cssText = 'margin-top: var(--space-4);';
+            msg.innerHTML = "You're browsing as a guest. Sign in to manage your profile and see your stats. <a class=\"btn btn--primary\" href=\"../index.html\">Sign in</a>";
+            profileTitle.insertAdjacentElement('afterend', msg);
+        }
     });
     socket.emit("checkPlayerDetails", {}, (response) => {
         if (!response) return;
@@ -76,15 +86,14 @@ emailChangeButton.addEventListener('click', () => {
     const newEmail = newEmailInput.value;
     const confirmPassword = confirmPasswordEmail.value;
 
-    socket.emit('change_player_details', { detail_type: "email", new: newEmail, oldPassword: confirmPassword }, async (response) => {
+    socket.emit('change_player_details', { detail_type: "email", new: newEmail, oldPassword: confirmPassword }, (response) => {
         if (response.success) {
             newEmailInput.value = "";
             confirmPasswordEmail.value = "";
+            showToast("Email updated.", { type: "success" });
+        } else {
+            showToast(response?.message || "Couldn't update email.", { type: "error" });
         }
-        await showMessage(response.message || "", {
-            title: response.success ? "Email updated" : "Update failed"
-        });
-        window.location.reload();
     });
 });
 
@@ -93,15 +102,14 @@ passwordChangeButton.addEventListener('click', () => {
     const newPassword = newPasswordInput.value;
     const confirmPassword = newPasswordOldInput.value;
 
-    socket.emit('change_player_details', { detail_type: "password", new: newPassword, oldPassword: confirmPassword }, async (response) => {
+    socket.emit('change_player_details', { detail_type: "password", new: newPassword, oldPassword: confirmPassword }, (response) => {
         if (response.success) {
             newPasswordInput.value = "";
             newPasswordOldInput.value = "";
+            showToast("Password updated.", { type: "success" });
+        } else {
+            showToast(response?.message || "Couldn't update password.", { type: "error" });
         }
-        await showMessage(response.message || "", {
-            title: response.success ? "Password updated" : "Update failed"
-        });
-        window.location.reload();
     });
 });
 
@@ -137,6 +145,36 @@ var roundsData = await getRoundsData();
 
 // Process the rounds data and generate stats
 var countryStats = processRoundsData(roundsData);
+
+// Empty state: no games recorded yet
+if (Object.keys(countryStats).length === 0) {
+    const detailsEl = document.getElementById('country-details');
+    const statsEl = document.getElementById('country-stats');
+    if (detailsEl) detailsEl.innerHTML = '<p>No games recorded yet — play a round to see your stats here.</p>';
+    if (statsEl) {
+        statsEl.classList.remove('hidden');
+        const closeBtn = statsEl.querySelector('.close-btn');
+        if (closeBtn) closeBtn.style.display = 'none';
+    }
+}
+
+// Populate keyboard-accessible country picker
+const statsPicker = document.getElementById('country-stats-picker');
+if (statsPicker && Object.keys(countryStats).length > 0) {
+    Object.keys(countryStats)
+        .sort((a, b) => (iso3ToFullName[a] || a).localeCompare(iso3ToFullName[b] || b))
+        .forEach(iso => {
+            const opt = document.createElement('option');
+            opt.value = iso;
+            opt.textContent = iso3ToFullName[iso] || iso;
+            statsPicker.appendChild(opt);
+        });
+    statsPicker.addEventListener('change', () => {
+        const iso = statsPicker.value;
+        if (!iso) return;
+        showCountryStats(iso3ToFullName[iso] || iso, countryStats[iso], null);
+    });
+}
 
 // Fetch the GeoJSON for the map (no change here)
 fetch('../geojson/world-admin-boundaries-new.geojson')
