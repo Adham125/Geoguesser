@@ -25,9 +25,9 @@
 .sp-pill {
   appearance: none;
   border: 1px solid var(--color-border);
-  background: rgba(17, 28, 54, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: var(--color-fg);
   padding: 8px 14px;
   border-radius: var(--radius-pill);
@@ -77,8 +77,8 @@
   text-overflow: ellipsis;
   max-width: 180px;
 }
-.sp-pill-now-toggle { display: inline-flex; width: 14px; height: 14px; color: var(--sp-green); }
-.sp-pill-now-toggle svg { width: 14px; height: 14px; }
+.sp-pill-toggle { background: transparent; border: none; color: var(--sp-green, #1DB954); cursor: pointer; padding: 0 2px; display: inline-flex; align-items: center; }
+.sp-pill-toggle svg { width: 14px; height: 14px; }
 
 @media (max-width: 480px) {
   .sp-pill-label { display: none; }
@@ -336,6 +336,8 @@
   margin: 0;
 }
 .sp-progress:disabled { opacity: 0.5; cursor: default; }
+.sp-ctl:disabled, .sp-ctl--main:disabled, .sp-ctl-icon:disabled { opacity: 0.45; cursor: not-allowed; }
+.sp-ctl:disabled:hover, .sp-ctl--main:disabled:hover, .sp-ctl-icon:disabled:hover { transform: none; }
 .sp-progress::-webkit-slider-thumb,
 .sp-vol::-webkit-slider-thumb {
   -webkit-appearance: none;

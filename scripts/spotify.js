@@ -17,6 +17,8 @@
 //   - All spotify_* localStorage keys are preserved by scripts/main.js (see
 //     the explicit preservation block at the top of that file).
 
+import { showToast } from './popup.js';
+
 const SCOPES = [
   'streaming',
   'user-read-email',
@@ -179,7 +181,7 @@ function openPlayerPopup() {
   const features = `width=${POPUP_W},height=${POPUP_H},left=${left},top=${top},toolbar=no,menubar=no,location=no`;
   state.popupWindow = window.open(POPUP_URL, POPUP_NAME, features);
   if (!state.popupWindow) {
-    alert('Pop-up was blocked. Please allow pop-ups for this site so the music player can open.');
+    showToast('Pop-up blocked — allow pop-ups for this site to open the music player.', { type: 'warning', duration: 6000 });
     return;
   }
   // Fresh popup → reset activation flag so the next play focuses it.
@@ -246,7 +248,7 @@ function buildDOM() {
       <span class="sp-pill-label">Music</span>
       <span class="sp-pill-now" hidden>
         <span class="sp-pill-now-title">—</span>
-        <span class="sp-pill-now-toggle" aria-hidden="true">${ICON_PLAY}</span>
+        <button type="button" class="sp-pill-toggle" aria-label="Play/pause">${ICON_PLAY}</button>
       </span>
     </button>
     <section class="sp-panel" role="dialog" aria-label="Spotify player" hidden>
@@ -263,8 +265,11 @@ function buildDOM() {
   document.body.appendChild(root);
   pill = root.querySelector('.sp-pill');
   panel = root.querySelector('.sp-panel');
+  panel.tabIndex = -1;
 
   pill.addEventListener('click', toggleExpanded);
+  const pillToggleBtn = pill.querySelector('.sp-pill-toggle');
+  if (pillToggleBtn) pillToggleBtn.addEventListener('click', (e) => { e.stopPropagation(); send({ type: 'toggle' }); });
   root.querySelector('.sp-close').addEventListener('click', () => setExpanded(false));
 
   // Use mousedown (not click) for the outside-close check. Inside-click
@@ -292,6 +297,12 @@ function setExpanded(open) {
     render();
     // Ask the popup for a fresh state snapshot when we come back to the UI.
     if (state.popupConnected) send({ type: 'state-request' });
+    requestAnimationFrame(() => {
+      const focusTarget = panel.querySelector('button, [href], input, select, [tabindex]:not([tabindex="-1"])');
+      try { (focusTarget || panel).focus(); } catch {}
+    });
+  } else {
+    try { pill.focus(); } catch {}
   }
 }
 
@@ -596,7 +607,7 @@ function paintPlaybackState() {
 
   const pillNow = pill.querySelector('.sp-pill-now');
   const pillTitle = pill.querySelector('.sp-pill-now-title');
-  const pillToggle = pill.querySelector('.sp-pill-now-toggle');
+  const pillToggle = pill.querySelector('.sp-pill-toggle');
   if (track) {
     pillNow.hidden = false;
     pillTitle.textContent = `${track.name} — ${track.artists?.[0]?.name || ''}`;
@@ -803,6 +814,7 @@ async function api(path, init = {}) {
   if (res.status === 204) return null;
   if (!res.ok) {
     console.warn('[spotify] api error', res.status, path);
+    setStatus('Spotify request failed — try again.');
     return null;
   }
   const ct = res.headers.get('content-type') || '';
