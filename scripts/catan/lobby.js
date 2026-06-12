@@ -6,6 +6,7 @@
 
 import { serverURL as server } from "../config.js";
 import { createRenderer } from "./render.js";
+import { attachConnectionBanner } from "../connection.js";
 
 const roomCode = localStorage.getItem("catanRoomId");
 if (!roomCode) window.location.href = "./home.html";
@@ -35,6 +36,7 @@ roomCodeCopy.addEventListener("click", async () => {
 });
 
 const socket = io(server, { withCredentials: true });
+attachConnectionBanner(socket);
 
 let players = {};
 let hostId = null;

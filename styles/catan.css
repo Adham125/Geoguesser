@@ -96,8 +96,10 @@ body.catan h1, body.catan h2, body.catan h3 {
 }
 
 .zoom-btn {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--r-md);
   border: 2px solid var(--c-panel-border);
   background: var(--c-panel);
@@ -300,6 +302,7 @@ body.catan h1, body.catan h2, body.catan h3 {
   border: 2px solid var(--c-panel-border);
   border-radius: var(--r-pill);
   padding: 9px 16px;
+  min-height: 44px;
   cursor: pointer;
   box-shadow: var(--shadow-piece);
   transition: transform 120ms ease, background 120ms ease;
@@ -309,12 +312,12 @@ body.catan h1, body.catan h2, body.catan h3 {
 .catan-btn:disabled { opacity: 0.45; cursor: default; }
 
 .catan-btn.primary {
-  background: var(--c-accent);
-  border-color: var(--c-accent-hover);
+  background: #B45A18;
+  border-color: #9E4C10;
   color: #FFF;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
-.catan-btn.primary:hover:not(:disabled) { background: var(--c-accent-hover); }
+.catan-btn.primary:hover:not(:disabled) { background: #9E4C10; }
 
 .catan-btn.ok {
   background: var(--c-ok);
@@ -573,6 +576,9 @@ body.catan h1, body.catan h2, body.catan h3 {
   font-family: var(--f-display);
 }
 .score-row b { color: var(--c-accent); }
+
+/* ---------- accessibility ---------- */
+body.catan :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 760px) {

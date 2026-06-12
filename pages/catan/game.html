@@ -61,28 +61,28 @@
     <div class="hand" id="hand"></div>
     <div class="dev-hand" id="dev-hand"></div>
     <div class="actions">
-      <button class="catan-btn" id="build-road" disabled>Road <span class="btn-cost">🪵🧱</span></button>
-      <button class="catan-btn" id="build-settlement" disabled>Settlement <span class="btn-cost">🪵🧱🐑🌾</span></button>
-      <button class="catan-btn" id="build-city" disabled>City <span class="btn-cost">🌾🌾🪨🪨🪨</span></button>
-      <button class="catan-btn" id="buy-dev" disabled>Dev Card <span class="btn-cost">🌾🐑🪨</span></button>
+      <button class="catan-btn" id="build-road" disabled>Road <span class="btn-cost"><span class="res-ico" role="img" aria-label="wood">🪵</span><span class="res-ico" role="img" aria-label="brick">🧱</span></span></button>
+      <button class="catan-btn" id="build-settlement" disabled>Settlement <span class="btn-cost"><span class="res-ico" role="img" aria-label="wood">🪵</span><span class="res-ico" role="img" aria-label="brick">🧱</span><span class="res-ico" role="img" aria-label="sheep">🐑</span><span class="res-ico" role="img" aria-label="wheat">🌾</span></span></button>
+      <button class="catan-btn" id="build-city" disabled>City <span class="btn-cost"><span class="res-ico" role="img" aria-label="wheat">🌾</span><span class="res-ico" role="img" aria-label="wheat">🌾</span><span class="res-ico" role="img" aria-label="ore">🪨</span><span class="res-ico" role="img" aria-label="ore">🪨</span><span class="res-ico" role="img" aria-label="ore">🪨</span></span></button>
+      <button class="catan-btn" id="buy-dev" disabled>Dev Card <span class="btn-cost"><span class="res-ico" role="img" aria-label="wheat">🌾</span><span class="res-ico" role="img" aria-label="sheep">🐑</span><span class="res-ico" role="img" aria-label="ore">🪨</span></span></button>
       <button class="catan-btn" id="trade-bank" disabled>Bank Trade</button>
       <button class="catan-btn" id="trade-players" disabled>Offer Trade</button>
       <button class="catan-btn ok" id="end-turn" disabled>End Turn</button>
     </div>
   </footer>
 
-  <div class="catan-modal-backdrop" id="discard-modal" hidden>
+  <div class="catan-modal-backdrop" id="discard-modal" role="dialog" aria-modal="true" aria-labelledby="discard-title" hidden>
     <div class="catan-modal">
-      <h2>Discard cards</h2>
+      <h2 id="discard-title">Discard cards</h2>
       <p id="discard-prompt"></p>
       <div class="picker-row" id="discard-picker"></div>
       <button class="catan-btn primary" id="discard-confirm" disabled>Discard</button>
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="trade-modal" hidden>
+  <div class="catan-modal-backdrop" id="trade-modal" role="dialog" aria-modal="true" aria-labelledby="trade-title" hidden>
     <div class="catan-modal">
-      <h2>Bank trade</h2>
+      <h2 id="trade-title">Bank trade</h2>
       <p id="bank-trade-rate">Give a set of one resource, receive one of your choice.</p>
       <div class="picker-row" id="trade-give"></div>
       <div class="picker-row" id="trade-receive"></div>
@@ -93,9 +93,9 @@
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="offer-modal" hidden>
+  <div class="catan-modal-backdrop" id="offer-modal" role="dialog" aria-modal="true" aria-labelledby="offer-title" hidden>
     <div class="catan-modal">
-      <h2>Offer a trade</h2>
+      <h2 id="offer-title">Offer a trade</h2>
       <p>Choose what you give and what you want in return.</p>
       <div class="trade-side"><span class="trade-side-label">You give</span><div class="picker-row" id="offer-give"></div></div>
       <div class="trade-side"><span class="trade-side-label">You want</span><div class="picker-row" id="offer-get"></div></div>
@@ -107,7 +107,7 @@
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="incoming-modal" hidden>
+  <div class="catan-modal-backdrop" id="incoming-modal" role="dialog" aria-modal="true" aria-labelledby="incoming-title" hidden>
     <div class="catan-modal">
       <h2 id="incoming-title">Trade offer</h2>
       <div class="incoming-body" id="incoming-body"></div>
@@ -118,7 +118,7 @@
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="resource-modal" hidden>
+  <div class="catan-modal-backdrop" id="resource-modal" role="dialog" aria-modal="true" aria-labelledby="resource-title" hidden>
     <div class="catan-modal">
       <h2 id="resource-title"></h2>
       <p id="resource-prompt"></p>
@@ -130,14 +130,14 @@
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="steal-modal" hidden>
+  <div class="catan-modal-backdrop" id="steal-modal" role="dialog" aria-modal="true" aria-labelledby="steal-title" hidden>
     <div class="catan-modal">
-      <h2>Steal from…</h2>
+      <h2 id="steal-title">Steal from…</h2>
       <div class="picker-row" id="steal-options"></div>
     </div>
   </div>
 
-  <div class="catan-modal-backdrop" id="winner-modal" hidden>
+  <div class="catan-modal-backdrop" id="winner-modal" role="dialog" aria-modal="true" aria-labelledby="winner-title" hidden>
     <div class="catan-modal winner-overlay">
       <h2 id="winner-title"></h2>
       <p id="winner-sub"></p>

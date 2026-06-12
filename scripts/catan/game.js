@@ -10,6 +10,8 @@
 import { serverURL as server } from "../config.js";
 import { createRenderer } from "./render.js";
 import { playSound } from "./sounds.js";
+import { trapFocus } from "../modal-behavior.js";
+import { attachConnectionBanner } from "../connection.js";
 
 const RESOURCES = ["wood", "brick", "sheep", "wheat", "ore"];
 const RESOURCE_ICONS = { wood: "🪵", brick: "🧱", sheep: "🐑", wheat: "🌾", ore: "🪨" };
@@ -84,6 +86,22 @@ const els = {
   winnerSub: $("winner-sub"),
 };
 
+// ---------------------------------------------------------------------------
+// accessible modal helpers
+// ---------------------------------------------------------------------------
+
+let releaseModal = null;
+function openModal(el, { dismissable = true, onDismiss } = {}) {
+  el.hidden = false;
+  releaseModal = trapFocus(el, dismissable
+    ? { onEscape: () => { closeModal(el); if (onDismiss) onDismiss(); } }
+    : {});
+}
+function closeModal(el) {
+  el.hidden = true;
+  if (releaseModal) { releaseModal(); releaseModal = null; }
+}
+
 let pub = null;       // last public state
 let mine = null;      // my private view
 let mySeat = null;
@@ -141,6 +159,7 @@ function sendIntent(event, payload = {}) {
 
 function connect() {
   socket = io(server, { withCredentials: true });
+  attachConnectionBanner(socket);
 
   const rejoin = () => {
     const seatToken = localStorage.getItem("catanSeatToken");
@@ -680,11 +699,11 @@ function updateModals() {
   if (pub.phase === "discard" && owe > 0) {
     if (els.discardModal.hidden) openDiscardModal(owe);
   } else {
-    els.discardModal.hidden = true;
+    if (!els.discardModal.hidden) closeModal(els.discardModal);
   }
 
   if (pub.phase !== "robber") {
-    els.stealModal.hidden = true;
+    if (!els.stealModal.hidden) closeModal(els.stealModal);
     pendingRobberHex = null;
   }
 
@@ -698,7 +717,7 @@ function updateModals() {
       els.winnerScores.innerHTML = pub.seats.map((s, i) =>
         `<div class="score-row"><span class="player-swatch" style="background:${s.colour}"></span>${escapeHtml(s.name)}<b>${pub.finalVP[i]} VP</b></div>`).join("");
     }
-    els.winnerModal.hidden = false;
+    if (els.winnerModal.hidden) openModal(els.winnerModal, { dismissable: false });
   }
 }
 
@@ -713,9 +732,9 @@ function openDiscardModal(owe) {
   els.discardConfirm.disabled = true;
   els.discardConfirm.onclick = () => {
     sendIntent("catan:discard", { resources: current });
-    els.discardModal.hidden = true;
+    closeModal(els.discardModal);
   };
-  els.discardModal.hidden = false;
+  openModal(els.discardModal, { dismissable: false });
 }
 
 function openTradeModal() {
@@ -746,10 +765,10 @@ function openTradeModal() {
   refresh();
   els.tradeConfirm.onclick = () => {
     sendIntent("catan:bankTrade", { give, receive });
-    els.tradeModal.hidden = true;
+    closeModal(els.tradeModal);
   };
-  els.tradeCancel.onclick = () => { els.tradeModal.hidden = true; };
-  els.tradeModal.hidden = false;
+  els.tradeCancel.onclick = () => { closeModal(els.tradeModal); };
+  openModal(els.tradeModal);
 }
 
 function openStealModal(victims, event = "catan:moveRobber") {
@@ -760,13 +779,13 @@ function openStealModal(victims, event = "catan:moveRobber") {
     btn.innerHTML = `<span class="player-swatch" style="display:inline-block;background:${pub.seats[v].colour}"></span> ${escapeHtml(seatName(v))} (${pub.handCounts[v]} cards)`;
     btn.onclick = () => {
       sendIntent(event, { hex: pendingRobberHex, victimSeat: v });
-      els.stealModal.hidden = true;
+      closeModal(els.stealModal);
       pendingRobberHex = null;
       knightPending = false;
     };
     els.stealOptions.appendChild(btn);
   }
-  els.stealModal.hidden = false;
+  openModal(els.stealModal, { dismissable: false });
 }
 
 // Resource picker for Year of Plenty (count 2) and Monopoly (count 1).
@@ -796,11 +815,11 @@ function openResourcePicker(title, prompt, count, onConfirm) {
   els.resourceConfirm.disabled = true;
   els.resourceConfirm.onclick = () => {
     if (picked.length !== count) return;
-    els.resourceModal.hidden = true;
+    closeModal(els.resourceModal);
     onConfirm(picked.slice());
   };
-  els.resourceCancel.onclick = () => { els.resourceModal.hidden = true; };
-  els.resourceModal.hidden = false;
+  els.resourceCancel.onclick = () => { closeModal(els.resourceModal); };
+  openModal(els.resourceModal);
 }
 
 // ---------------------------------------------------------------------------
@@ -855,10 +874,10 @@ function openOfferModal() {
   els.offerSend.onclick = () => {
     const clean = o => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0));
     sendIntent("catan:proposeTrade", { give: clean(give), get: clean(get), to: target });
-    els.offerModal.hidden = true;
+    closeModal(els.offerModal);
   };
-  els.offerCancel.onclick = () => { els.offerModal.hidden = true; };
-  els.offerModal.hidden = false;
+  els.offerCancel.onclick = () => { closeModal(els.offerModal); };
+  openModal(els.offerModal);
 }
 
 function describeBundle(b) {
@@ -869,9 +888,9 @@ function describeBundle(b) {
 function updateIncomingTrade() {
   const t = pub.trade;
   const iAmTarget = t && mine && t.from !== mySeat && (t.to === null || t.to === mySeat);
-  if (!iAmTarget) { els.incomingModal.hidden = true; return; }
+  if (!iAmTarget) { if (!els.incomingModal.hidden) closeModal(els.incomingModal); return; }
   const key = JSON.stringify(t);
-  if (key === dismissedTradeKey) { els.incomingModal.hidden = true; return; }
+  if (key === dismissedTradeKey) { if (!els.incomingModal.hidden) closeModal(els.incomingModal); return; }
   els.incomingTitle.textContent = `${seatName(t.from)} offers a trade`;
   const haveIt = Object.entries(t.get).every(([r, n]) => mine.hand[r] >= n);
   els.incomingBody.innerHTML =
@@ -881,14 +900,14 @@ function updateIncomingTrade() {
   els.incomingAccept.disabled = !haveIt;
   els.incomingAccept.onclick = () => {
     sendIntent("catan:respondTrade", { accept: true });
-    els.incomingModal.hidden = true;
+    closeModal(els.incomingModal);
   };
   els.incomingDecline.onclick = () => {
     sendIntent("catan:respondTrade", { accept: false });
     dismissedTradeKey = JSON.stringify(t);
-    els.incomingModal.hidden = true;
+    closeModal(els.incomingModal);
   };
-  els.incomingModal.hidden = false;
+  if (els.incomingModal.hidden) openModal(els.incomingModal);
 }
 
 // ---------------------------------------------------------------------------
