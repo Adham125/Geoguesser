@@ -1,6 +1,6 @@
 // Catan lobby — ready check. Everyone who opens the lobby joins the room
 // immediately (so the roster shows all present players), then toggles
-// Ready ✓ / ✗. The host can start once 3–4 players are all ready.
+// Ready ✓ / ✗. The host can start once 2–4 players are all ready.
 // Reuses the shared room events (joinedRoom/playerJoined/hostChanged/
 // kickPlayer) plus catan:ready / catan:start.
 
@@ -10,7 +10,9 @@ import { createRenderer } from "./render.js";
 const roomCode = localStorage.getItem("catanRoomId");
 if (!roomCode) window.location.href = "./home.html";
 
-const roomChip = document.getElementById("room-chip");
+const roomCodeText = document.getElementById("room-code-text");
+const roomCodeCopy = document.getElementById("room-code-copy");
+const copyFeedback = document.getElementById("copy-feedback");
 const nameInput = document.getElementById("name-input");
 const colourInput = document.getElementById("colour-input");
 const readyBtn = document.getElementById("ready-btn");
@@ -19,7 +21,18 @@ const roster = document.getElementById("roster");
 const startBtn = document.getElementById("start-btn");
 const lobbyError = document.getElementById("lobby-error");
 
-roomChip.textContent = `ROOM ${roomCode}`;
+roomCodeText.textContent = roomCode;
+document.title = `Catan — Room ${roomCode}`;
+
+roomCodeCopy.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(roomCode);
+    copyFeedback.textContent = "Copied!";
+  } catch {
+    copyFeedback.textContent = "Press Ctrl+C to copy";
+  }
+  setTimeout(() => { copyFeedback.textContent = ""; }, 1800);
+});
 
 const socket = io(server, { withCredentials: true });
 
@@ -69,10 +82,35 @@ socket.on("catan:mapUpdate", ({ mapId, board }) => {
   renderMapPreview(board);
 });
 
+// --- turn timer ---
+const timerRow = document.getElementById("timer-row");
+let currentTimerSec = 0;
+
+function updateTimerPills() {
+  const isHost = socket.id === hostId;
+  for (const btn of timerRow.querySelectorAll(".map-pill")) {
+    btn.classList.toggle("selected", Number(btn.getAttribute("data-sec")) === currentTimerSec);
+    btn.disabled = !isHost;
+  }
+}
+
+timerRow.addEventListener("click", e => {
+  const btn = e.target.closest(".map-pill");
+  if (!btn || socket.id !== hostId) return;
+  socket.emit("catan:setTimer", { roomCode, seconds: Number(btn.getAttribute("data-sec")) });
+});
+
+socket.on("catan:timerUpdate", ({ seconds }) => {
+  currentTimerSec = seconds;
+  updateTimerPills();
+});
+
 socket.emit("catan:getMap", { roomCode }, res => {
   if (!res) return;
   currentMapId = res.mapId;
+  currentTimerSec = res.timerSec || 0;
   updateMapPills();
+  updateTimerPills();
   renderMapPreview(res.board);
 });
 // ------------------------------------------------------------------------
@@ -158,17 +196,18 @@ function renderRoster() {
   }
   const isHost = socket.id === hostId;
   const allReady = ids.length > 0 && ids.every(id => players[id].ready);
-  startBtn.disabled = !(isHost && ids.length >= 3 && ids.length <= 4 && allReady);
+  startBtn.disabled = !(isHost && ids.length >= 2 && ids.length <= 4 && allReady);
   if (!isHost) {
     startBtn.textContent = "Waiting for host…";
-  } else if (ids.length < 3) {
-    startBtn.textContent = `Start Game (${ids.length}/3 players)`;
+  } else if (ids.length < 2) {
+    startBtn.textContent = `Start Game (${ids.length}/2 players)`;
   } else if (!allReady) {
     startBtn.textContent = "Start Game (waiting for ready)";
   } else {
     startBtn.textContent = "Start Game";
   }
   updateMapPills(); // host knowledge can change with the roster
+  updateTimerPills();
 }
 
 roster.addEventListener("click", e => {

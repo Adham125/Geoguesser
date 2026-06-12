@@ -23,6 +23,7 @@
   <header class="catan-topbar">
     <a class="catan-brand" href="./home.html">CATAN</a>
     <div class="turn-banner" id="turn-banner"></div>
+    <div class="turn-timer" id="turn-timer" hidden></div>
     <div class="room-chip" id="room-chip"></div>
   </header>
 
@@ -35,14 +36,22 @@
         <button class="zoom-btn" id="zoom-out" aria-label="Zoom out">&minus;</button>
         <button class="zoom-btn" id="zoom-reset" aria-label="Reset view">&#x21bb;</button>
       </div>
+
+      <!-- Dice tray: hold to shake, release to throw. -->
+      <div class="dice-tray" id="dice-tray" role="button" tabindex="0" aria-label="Roll the dice">
+        <div class="dice-pair" id="dice-pair">
+          <div class="die" id="die-1"></div>
+          <div class="die" id="die-2"></div>
+        </div>
+        <span class="dice-hint" id="dice-hint">Hold to roll</span>
+      </div>
     </div>
 
     <aside class="catan-side">
       <div id="players"></div>
-      <div class="dice-area">
-        <div class="die" id="die-1"></div>
-        <div class="die" id="die-2"></div>
-        <button class="catan-btn primary" id="roll-btn" disabled>Roll</button>
+      <div class="bank-panel">
+        <span class="bank-label">Bank</span>
+        <div class="bank-row" id="bank-row"></div>
       </div>
       <div class="log" id="log" aria-live="polite"></div>
     </aside>
@@ -50,11 +59,14 @@
 
   <footer class="catan-dock">
     <div class="hand" id="hand"></div>
+    <div class="dev-hand" id="dev-hand"></div>
     <div class="actions">
       <button class="catan-btn" id="build-road" disabled>Road <span class="btn-cost">🪵🧱</span></button>
       <button class="catan-btn" id="build-settlement" disabled>Settlement <span class="btn-cost">🪵🧱🐑🌾</span></button>
       <button class="catan-btn" id="build-city" disabled>City <span class="btn-cost">🌾🌾🪨🪨🪨</span></button>
-      <button class="catan-btn" id="trade-btn" disabled>Trade 4:1</button>
+      <button class="catan-btn" id="buy-dev" disabled>Dev Card <span class="btn-cost">🌾🐑🪨</span></button>
+      <button class="catan-btn" id="trade-bank" disabled>Bank Trade</button>
+      <button class="catan-btn" id="trade-players" disabled>Offer Trade</button>
       <button class="catan-btn ok" id="end-turn" disabled>End Turn</button>
     </div>
   </footer>
@@ -70,13 +82,50 @@
 
   <div class="catan-modal-backdrop" id="trade-modal" hidden>
     <div class="catan-modal">
-      <h2>Bank trade 4 : 1</h2>
-      <p>Give four of a kind, receive one of your choice.</p>
+      <h2>Bank trade</h2>
+      <p id="bank-trade-rate">Give a set of one resource, receive one of your choice.</p>
       <div class="picker-row" id="trade-give"></div>
       <div class="picker-row" id="trade-receive"></div>
       <div>
         <button class="catan-btn" id="trade-cancel">Cancel</button>
         <button class="catan-btn primary" id="trade-confirm" disabled>Trade</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catan-modal-backdrop" id="offer-modal" hidden>
+    <div class="catan-modal">
+      <h2>Offer a trade</h2>
+      <p>Choose what you give and what you want in return.</p>
+      <div class="trade-side"><span class="trade-side-label">You give</span><div class="picker-row" id="offer-give"></div></div>
+      <div class="trade-side"><span class="trade-side-label">You want</span><div class="picker-row" id="offer-get"></div></div>
+      <div class="offer-target" id="offer-target"></div>
+      <div>
+        <button class="catan-btn" id="offer-cancel">Cancel</button>
+        <button class="catan-btn primary" id="offer-send" disabled>Send offer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catan-modal-backdrop" id="incoming-modal" hidden>
+    <div class="catan-modal">
+      <h2 id="incoming-title">Trade offer</h2>
+      <div class="incoming-body" id="incoming-body"></div>
+      <div id="incoming-actions">
+        <button class="catan-btn" id="incoming-decline">Decline</button>
+        <button class="catan-btn ok" id="incoming-accept">Accept</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catan-modal-backdrop" id="resource-modal" hidden>
+    <div class="catan-modal">
+      <h2 id="resource-title"></h2>
+      <p id="resource-prompt"></p>
+      <div class="picker-row" id="resource-picker"></div>
+      <div>
+        <button class="catan-btn" id="resource-cancel">Cancel</button>
+        <button class="catan-btn primary" id="resource-confirm" disabled>Confirm</button>
       </div>
     </div>
   </div>
@@ -92,6 +141,7 @@
     <div class="catan-modal winner-overlay">
       <h2 id="winner-title"></h2>
       <p id="winner-sub"></p>
+      <div id="winner-scores"></div>
       <a class="catan-btn primary" href="./home.html">Back to Catan home</a>
     </div>
   </div>

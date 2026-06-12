@@ -82,10 +82,11 @@ export function createRenderer(svg, board, opts = {}) {
     }, svg);
   }
 
-  // Layer order: sand frame, tiles, tokens, roads, robber, buildings, hits.
+  // Layer order: sand frame, tiles, tokens, ports, roads, robber, buildings, hits.
   const gFrame = el("g", { class: "layer-frame" }, svg);
   const gTiles = el("g", { class: "layer-tiles" }, svg);
   const gTokens = el("g", { class: "layer-tokens" }, svg);
+  const gPorts = el("g", { class: "layer-ports" }, svg);
   const gRoads = el("g", { class: "layer-roads" }, svg);
   const gRobber = el("g", { class: "layer-robber" }, svg);
   const gBuildings = el("g", { class: "layer-buildings" }, svg);
@@ -126,6 +127,25 @@ export function createRenderer(svg, board, opts = {}) {
           class: "num-pip",
         }, g);
       }
+    }
+  }
+
+  // --- ports (static) -----------------------------------------------------
+  for (const port of (board.ports || [])) {
+    const [v1, v2] = port.vertices;
+    const p1 = vertexCenter(v1), p2 = vertexCenter(v2);
+    const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+    // Push the badge outward (away from the board centre) into the sea.
+    const len = Math.hypot(mid.x, mid.y) || 1;
+    const badge = { x: mid.x + (mid.x / len) * 30, y: mid.y + (mid.y / len) * 30 };
+    el("line", { x1: p1.x, y1: p1.y, x2: badge.x, y2: badge.y, class: "port-dock" }, gPorts);
+    el("line", { x1: p2.x, y1: p2.y, x2: badge.x, y2: badge.y, class: "port-dock" }, gPorts);
+    el("circle", { cx: badge.x, cy: badge.y, r: 14, class: `port-badge port-${port.type === "3:1" ? "generic" : port.type}` }, gPorts);
+    const rate = el("text", { x: badge.x, y: badge.y + (port.type === "3:1" ? 1 : -3), class: "port-text" }, gPorts);
+    rate.textContent = port.type === "3:1" ? "3:1" : "2:1";
+    if (port.type !== "3:1") {
+      const ic = el("text", { x: badge.x, y: badge.y + 8, class: "port-icon" }, gPorts);
+      ic.textContent = RESOURCE_ICONS[port.type] || "";
     }
   }
 

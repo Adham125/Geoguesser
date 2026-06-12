@@ -6,7 +6,7 @@ Hello!
 This is a free online game site with two games to pick from:
 
 - **GeoGuesser** — singleplayer and multiplayer. You get dropped in a random location and have to guess where on the world map you are.
-- **Catan** — multiplayer (3–4 players). Settle the island: gather resources, build roads, settlements and cities, and race to 10 victory points.
+- **Catan** — multiplayer (2–4 players). Settle the island: gather resources, build roads, settlements and cities, and race to 10 victory points.
 
 After logging in (or playing as a guest) you choose your game from the hub screen.
 
@@ -76,7 +76,7 @@ To Join a Room:
 
 1- Pick **Catan** on the hub screen, then **Create Game** (or enter a friend's room code and **Join**).
 
-2- Share the room code. Everyone picks a name and colour and clicks **Ready ✓** — the lobby shows who's ready with a tick or a cross. The host can start once 3–4 players are all ready.
+2- Share the room code. Everyone picks a name and colour and clicks **Ready ✓** — the lobby shows who's ready with a tick or a cross. The host can start once 2–4 players are all ready.
 
 3- Place your two starting settlements and roads (the board highlights your legal spots), then take turns: roll the dice, collect resources, build, and trade with the bank (4:1).
 

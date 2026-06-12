@@ -88,7 +88,7 @@ body.catan h1, body.catan h2, body.catan h3 {
 .board-zoom {
   position: absolute;
   bottom: 10px;
-  right: 10px;
+  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -191,6 +191,8 @@ body.catan h1, body.catan h2, body.catan h3 {
   color: var(--c-ink-muted);
 }
 .player-stats .stat-vp { color: var(--c-accent); font-size: 0.9rem; }
+.player-stats .stat-road { font-weight: 600; }
+.player-stats .stat-road.lr-holder { font-weight: 800; color: var(--c-accent); }
 
 /* ---------- dice ---------- */
 .dice-area {
@@ -428,6 +430,149 @@ body.catan h1, body.catan h2, body.catan h3 {
 .picker-cell button:disabled { opacity: 0.35; cursor: default; }
 
 .winner-overlay h2 { font-size: 2rem; color: var(--c-accent); }
+
+/* ---------- turn timer ---------- */
+.turn-timer {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #FFF;
+  background: rgba(31, 58, 71, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+}
+.turn-timer.urgent { background: var(--c-danger); border-color: #FFF; animation: catan-pulse 0.8s ease-in-out infinite; }
+
+/* ---------- dice tray (bottom-right of board) ---------- */
+.dice-tray {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px 6px;
+  background: var(--c-panel);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-piece);
+  z-index: 5;
+  opacity: 0.55;
+  cursor: not-allowed;
+  user-select: none;
+  touch-action: none;
+}
+.dice-tray.active { opacity: 1; cursor: grab; }
+.dice-tray.active:active { cursor: grabbing; }
+.dice-pair { display: flex; gap: 8px; }
+.dice-pair.shaking { animation: dice-shake 0.35s linear infinite; }
+.dice-hint {
+  font-family: var(--f-body);
+  font-weight: 700;
+  font-size: 0.66rem;
+  color: var(--c-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dice-tray:not(.active) .dice-hint { visibility: hidden; }
+
+@keyframes dice-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-2px, 1px) rotate(-6deg); }
+  50% { transform: translate(2px, -1px) rotate(5deg); }
+  75% { transform: translate(-1px, -1px) rotate(-3deg); }
+}
+
+/* ---------- bank panel ---------- */
+.bank-panel {
+  background: var(--c-panel);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--r-md);
+  padding: 7px 10px;
+  box-shadow: var(--shadow-piece);
+}
+.bank-label {
+  font-family: var(--f-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+.bank-row { display: flex; justify-content: space-between; margin-top: 4px; }
+.bank-cell { display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; }
+.bank-count { font-family: var(--f-display); font-weight: 700; font-size: 0.8rem; }
+
+/* ---------- award badges in player panels ---------- */
+.player-name .award { margin-left: 2px; font-size: 0.85rem; }
+
+/* ---------- dev card hand ---------- */
+.dev-hand {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--c-ink);
+  background: #EFE6FF;
+  border: 2px solid #C9B6E8;
+  border-radius: var(--r-pill);
+  padding: 5px 11px;
+  cursor: pointer;
+  box-shadow: var(--shadow-piece);
+}
+.dev-chip:disabled { opacity: 0.5; cursor: default; }
+.dev-chip:hover:not(:disabled) { transform: translateY(-2px); }
+.dev-chip .dev-ct { font-weight: 800; }
+.dev-chip .dev-new { font-size: 0.7rem; opacity: 0.8; }
+
+/* ---------- ports ---------- */
+.port-dock { stroke: #8B6F47; stroke-width: 3; stroke-linecap: round; opacity: 0.6; }
+.port-badge { stroke: #6B5436; stroke-width: 2; fill: #E8D5A3; }
+.port-badge.port-generic { fill: #D9CBB0; }
+.port-text {
+  font-family: var(--f-display);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--c-ink);
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.port-icon { font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+
+/* ---------- trade / resource modals ---------- */
+.trade-side, .offer-target { margin: 8px 0; }
+.trade-side-label, .offer-target > .trade-side-label {
+  display: block;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+  margin-bottom: 4px;
+}
+.offer-target { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+.offer-target .catan-btn { font-size: 0.8rem; padding: 5px 12px; }
+.incoming-body { margin: 8px 0 14px; }
+.incoming-body p { margin: 4px 0; }
+.trade-warn { color: var(--c-danger); font-weight: 700; }
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0;
+  font-family: var(--f-display);
+}
+.score-row b { color: var(--c-accent); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 760px) {

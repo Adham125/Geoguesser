@@ -24,11 +24,21 @@
   <header class="catan-topbar">
     <a class="catan-brand" href="./home.html">← Catan</a>
     <div class="turn-banner"></div>
-    <div class="room-chip" id="room-chip"></div>
   </header>
 
   <main class="catan-center">
     <div class="catan-card" id="lobby-card">
+      <div class="room-code-banner">
+        <span class="room-code-label">Room code — share to invite</span>
+        <button class="room-code-value" id="room-code-copy" title="Click to copy">
+          <span id="room-code-text">·····</span>
+          <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/>
+          </svg>
+        </button>
+        <span class="copy-feedback" id="copy-feedback" aria-live="polite"></span>
+      </div>
+
       <h2>Get ready</h2>
       <div class="details-row">
         <input type="text" id="name-input" placeholder="Your name" maxlength="20" autocomplete="off">
@@ -50,7 +60,17 @@
         <p class="map-hint" id="map-hint"></p>
       </div>
 
-      <p class="lobby-hint">Share the room code — the game needs <b>3–4 players</b>, all ready.</p>
+      <div class="timer-section">
+        <span class="timer-label">Turn timer</span>
+        <div class="timer-row" id="timer-row">
+          <button class="map-pill" data-sec="0">Off</button>
+          <button class="map-pill" data-sec="30">30s</button>
+          <button class="map-pill" data-sec="60">60s</button>
+          <button class="map-pill" data-sec="90">90s</button>
+        </div>
+      </div>
+
+      <p class="lobby-hint">Share the room code — the game needs <b>2–4 players</b>, all ready.</p>
       <div id="roster"></div>
       <button class="catan-btn ok big" id="start-btn" disabled>Start Game</button>
       <p class="form-error" id="lobby-error"></p>

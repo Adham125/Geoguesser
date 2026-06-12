@@ -54,6 +54,64 @@
   padding: 13px 22px;
 }
 
+/* Prominent, copyable room code at the top of the lobby card. */
+.room-code-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 16px 12px;
+  margin: -24px -28px 4px; /* bleed to the card edges */
+  background: var(--c-accent);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+.room-code-label {
+  font-family: var(--f-body);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.room-code-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: #FFF;
+  color: var(--c-ink);
+  border-radius: var(--r-pill);
+  padding: 6px 18px;
+  cursor: pointer;
+  box-shadow: var(--shadow-piece);
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  letter-spacing: 0.22em;
+  line-height: 1.1;
+  transition: transform 100ms ease;
+}
+.room-code-value:hover { transform: translateY(-1px); }
+.room-code-value:active { transform: translateY(0); }
+.room-code-value #room-code-text { padding-left: 0.22em; } /* offset the trailing letter-spacing */
+
+.copy-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--c-ink-muted);
+  flex-shrink: 0;
+}
+
+.copy-feedback {
+  min-height: 1em;
+  font-family: var(--f-body);
+  font-weight: 700;
+  font-size: 0.74rem;
+  color: #FFF;
+}
+
 .join-row, .details-row {
   display: flex;
   gap: 8px;
@@ -153,6 +211,23 @@
   margin: 0;
   color: var(--c-ink-muted);
   font-size: 0.78rem;
+}
+
+.timer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.timer-label {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+}
+.timer-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
 }
 
 .lobby-hint {

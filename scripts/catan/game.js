@@ -34,14 +34,40 @@ const els = {
   players: $("players"),
   die1: $("die-1"),
   die2: $("die-2"),
-  rollBtn: $("roll-btn"),
+  diceTray: $("dice-tray"),
+  dicePair: $("dice-pair"),
+  diceHint: $("dice-hint"),
+  turnTimer: $("turn-timer"),
+  bankRow: $("bank-row"),
   log: $("log"),
   hand: $("hand"),
+  devHand: $("dev-hand"),
   buildRoad: $("build-road"),
   buildSettlement: $("build-settlement"),
   buildCity: $("build-city"),
-  tradeBtn: $("trade-btn"),
+  buyDev: $("buy-dev"),
+  tradeBank: $("trade-bank"),
+  tradePlayers: $("trade-players"),
   endTurn: $("end-turn"),
+  offerModal: $("offer-modal"),
+  offerGive: $("offer-give"),
+  offerGet: $("offer-get"),
+  offerTarget: $("offer-target"),
+  offerCancel: $("offer-cancel"),
+  offerSend: $("offer-send"),
+  incomingModal: $("incoming-modal"),
+  incomingTitle: $("incoming-title"),
+  incomingBody: $("incoming-body"),
+  incomingActions: $("incoming-actions"),
+  incomingAccept: $("incoming-accept"),
+  incomingDecline: $("incoming-decline"),
+  resourceModal: $("resource-modal"),
+  resourceTitle: $("resource-title"),
+  resourcePrompt: $("resource-prompt"),
+  resourcePicker: $("resource-picker"),
+  resourceCancel: $("resource-cancel"),
+  resourceConfirm: $("resource-confirm"),
+  winnerScores: $("winner-scores"),
   discardModal: $("discard-modal"),
   discardPrompt: $("discard-prompt"),
   discardPicker: $("discard-picker"),
@@ -64,7 +90,13 @@ let mySeat = null;
 let renderer = null;
 let armedBuild = null;       // 'road' | 'settlement' | 'city' while picking a spot
 let pendingRobberHex = null; // chosen hex awaiting victim pick
+let knightPending = false;   // playing a Knight: next hex click steals via the card
+let devRoadEdges = null;     // array while placing Road Building's free roads
 let soundSeq = null;         // last log seq we've played sounds for
+let timerTick = null;        // interval id for the turn-timer countdown
+let dismissedTradeKey = null; // signature of the last incoming offer we declined
+
+const RESOURCE_NAMES = { wood: "wood", brick: "brick", sheep: "sheep", wheat: "wheat", ore: "ore" };
 
 const EVENT_SOUNDS = {
   roll: "roll",
@@ -72,6 +104,8 @@ const EVENT_SOUNDS = {
   placeSettlement: "build",
   placeRoad: "build",
   bankTrade: "trade",
+  tradeAccepted: "trade",
+  buyDev: "trade",
   moveRobber: "robber",
   discard: "discard",
   gameOver: "win",
@@ -125,6 +159,9 @@ function connect() {
   socket.on("catan:state", state => applyState(state, null));
   socket.on("catan:hand", hand => applyState(null, hand));
   socket.on("catan:error", ({ reason }) => showToast(reason));
+  socket.on("catan:tradeDeclined", ({ seat }) => {
+    if (pub && pub.trade && pub.trade.from === mySeat) showToast(`${seatName(seat)} declined your offer`);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -151,12 +188,37 @@ function applyState(newPub, newMine) {
   renderer.render(pub);
   renderPlayers();
   renderDice();
+  renderBank();
   renderHand();
+  renderDevHand();
   renderLog();
   renderBanner();
+  renderTimer();
   updateButtons();
   updateTargets();
   updateModals();
+  updateIncomingTrade();
+}
+
+// ---------------------------------------------------------------------------
+// turn timer countdown
+// ---------------------------------------------------------------------------
+
+function renderTimer() {
+  if (timerTick) { clearInterval(timerTick); timerTick = null; }
+  if (!pub.turnDeadline || pub.phase === "finished") {
+    els.turnTimer.hidden = true;
+    return;
+  }
+  const tick = () => {
+    const left = Math.max(0, Math.round((pub.turnDeadline - Date.now()) / 1000));
+    els.turnTimer.hidden = false;
+    els.turnTimer.textContent = `⏱ ${left}s`;
+    els.turnTimer.classList.toggle("urgent", left <= 10);
+    if (left <= 0 && timerTick) { clearInterval(timerTick); timerTick = null; }
+  };
+  tick();
+  timerTick = setInterval(tick, 500);
 }
 
 const myTurn = () => mySeat !== null && pub.currentSeat === mySeat;
@@ -174,34 +236,55 @@ function onVertex(vid) {
 }
 
 function onEdge(eid) {
-  if (pub.phase === "setup") sendIntent("catan:placeRoad", { edgeId: eid });
-  else if (armedBuild === "road") {
+  if (pub.phase === "setup") { sendIntent("catan:placeRoad", { edgeId: eid }); return; }
+  if (devRoadEdges) {
+    devRoadEdges.push(eid);
+    if (devRoadEdges.length === 2 || legalRoadEdges(devRoadEdges).length === 0) {
+      sendIntent("catan:playRoadBuilding", { edge1: devRoadEdges[0], edge2: devRoadEdges[1] || null });
+      devRoadEdges = null;
+      updateTargets();
+    } else {
+      updateTargets(); // highlight the remaining legal edges (incl. ones reached by edge 1)
+    }
+    return;
+  }
+  if (armedBuild === "road") {
     sendIntent("catan:build", { kind: "road", id: eid });
     disarm();
   }
 }
 
+// hex clicks drive both the rolled-7 robber and a played Knight card.
 function onHex(hk) {
-  if (pub.phase !== "robber" || !myTurn()) return;
+  const isRobber = pub.phase === "robber" && myTurn();
+  if (!isRobber && !knightPending) return;
+  const event = knightPending ? "catan:playKnight" : "catan:moveRobber";
   const victims = robberVictimSeats(hk);
   if (victims.length === 0) {
-    sendIntent("catan:moveRobber", { hex: hk, victimSeat: null });
+    sendIntent(event, { hex: hk, victimSeat: null });
+    knightPending = false;
   } else if (victims.length === 1) {
-    sendIntent("catan:moveRobber", { hex: hk, victimSeat: victims[0] });
+    sendIntent(event, { hex: hk, victimSeat: victims[0] });
+    knightPending = false;
   } else {
     pendingRobberHex = hk;
-    openStealModal(victims);
+    openStealModal(victims, event);
   }
 }
 
 function disarm() {
   armedBuild = null;
+  knightPending = false;
+  devRoadEdges = null;
   updateButtons();
   updateTargets();
 }
 
 function armBuild(kind) {
-  armedBuild = armedBuild === kind ? null : kind;
+  const next = armedBuild === kind ? null : kind;
+  armedBuild = next;
+  knightPending = false;
+  devRoadEdges = null;
   updateButtons();
   updateTargets();
 }
@@ -220,14 +303,18 @@ function myRoadTouchesVertex(vid) {
     pub.occupied.edges[e] && pub.occupied.edges[e].seat === mySeat);
 }
 
-function legalRoadEdges() {
+// Legal road edges for mySeat. `extra` is a list of not-yet-committed edges
+// (Road Building's first pick) treated as already owned so the second pick
+// can chain off it.
+function legalRoadEdges(extra = []) {
+  const owns = eid => (pub.occupied.edges[eid] && pub.occupied.edges[eid].seat === mySeat) || extra.includes(eid);
   return Object.keys(pub.board.edgeToVertices).filter(eid => {
-    if (pub.occupied.edges[eid]) return false;
+    if (pub.occupied.edges[eid] || extra.includes(eid)) return false;
     return pub.board.edgeToVertices[eid].some(vid => {
       const occ = pub.occupied.vertices[vid];
       if (occ && occ.seat === mySeat) return true;
       if (occ && occ.seat !== mySeat) return false;
-      return myRoadTouchesVertex(vid);
+      return pub.board.vertexToEdges[vid].some(owns);
     });
   });
 }
@@ -259,10 +346,15 @@ function updateTargets() {
     return;
   }
 
-  if (pub.phase === "robber" && myTurn()) {
+  if ((pub.phase === "robber" && myTurn()) || knightPending) {
     renderer.setTargets({
       hexes: pub.board.hexes.map(h => `${h.q},${h.r}`).filter(hk => hk !== pub.robberHex),
     });
+    return;
+  }
+
+  if (devRoadEdges) {
+    renderer.setTargets({ edges: legalRoadEdges(devRoadEdges) });
     return;
   }
 
@@ -296,15 +388,69 @@ function renderPlayers() {
     panel.className = "player-panel" + (i === pub.currentSeat ? " current-turn" : "");
     const dis = seat.connected ? "" : '<span class="disconnected-badge">OFFLINE</span>';
     const you = i === mySeat ? " (you)" : "";
+    const badges =
+      (pub.longestRoad === i ? `<span class="award" title="Longest Road (${pub.longestRoadLen})">🛣️</span>` : "") +
+      (pub.largestArmy === i ? `<span class="award" title="Largest Army (${pub.knightsPlayed[i]} knights)">⚔️</span>` : "");
+    const devN = pub.devCounts[i] || 0;
+    const roadLen = (pub.roadLengths && pub.roadLengths[i]) || 0;
+    const holdsRoad = pub.longestRoad === i;
     panel.innerHTML = `
       <div class="player-swatch" style="background:${seat.colour}"></div>
-      <div class="player-name">${escapeHtml(seat.name)}${you}${dis}</div>
+      <div class="player-name">${escapeHtml(seat.name)}${you}${dis} ${badges}</div>
       <div class="player-stats">
         <span class="stat-vp">★ ${pub.vp[i]}</span>
-        <span>🎴 ${pub.handCounts[i]}</span>
+        <span title="resource cards">🎴 ${pub.handCounts[i]}</span>
+        <span title="development cards">🃏 ${devN}</span>
+        <span class="stat-road${holdsRoad ? " lr-holder" : ""}" title="longest road${holdsRoad ? " — holds the bonus" : ""}">🛣️ ${roadLen}</span>
       </div>`;
     els.players.appendChild(panel);
   });
+}
+
+const BANK_ORDER = ["wood", "brick", "sheep", "wheat", "ore"];
+
+function renderBank() {
+  els.bankRow.innerHTML = "";
+  for (const res of BANK_ORDER) {
+    const cell = document.createElement("div");
+    cell.className = "bank-cell";
+    cell.innerHTML = `<span class="bank-icon">${RESOURCE_ICONS[res]}</span><span class="bank-count">${pub.bank[res]}</span>`;
+    els.bankRow.appendChild(cell);
+  }
+}
+
+const DEV_LABELS = {
+  knight: { icon: "⚔️", name: "Knight" },
+  road: { icon: "🛣️", name: "Road Building" },
+  plenty: { icon: "🌾", name: "Year of Plenty" },
+  monopoly: { icon: "💰", name: "Monopoly" },
+  vp: { icon: "⭐", name: "Victory Point" },
+};
+
+function renderDevHand() {
+  els.devHand.innerHTML = "";
+  if (!mine) return;
+  const canPlay = pub.phase === "main" && myTurn();
+  let any = false;
+  for (const card of ["knight", "road", "plenty", "monopoly", "vp"]) {
+    const playable = mine.dev[card] || 0;
+    const fresh = mine.devNew[card] || 0;
+    const total = playable + fresh;
+    if (total === 0) continue;
+    any = true;
+    const meta = DEV_LABELS[card];
+    const chip = document.createElement("button");
+    chip.className = "dev-chip";
+    // Knights may also be played in the roll phase.
+    const usable = card !== "vp" && playable > 0 &&
+      (canPlay || (card === "knight" && pub.phase === "roll" && myTurn()));
+    chip.disabled = !usable;
+    chip.innerHTML = `<span class="dev-ic">${meta.icon}</span><span class="dev-nm">${meta.name}</span><span class="dev-ct">×${total}</span>` +
+      (fresh > 0 ? `<span class="dev-new" title="bought this turn — playable next turn">🔒${fresh}</span>` : "");
+    if (usable) chip.addEventListener("click", () => playDevCard(card));
+    els.devHand.appendChild(chip);
+  }
+  els.devHand.style.display = any ? "" : "none";
 }
 
 const PIP_LAYOUT = {
@@ -370,6 +516,16 @@ function describeLogEntry(e) {
     case "robberPhase": return null;
     case "moveRobber": return `<b>${escapeHtml(seatName(e.seat))}</b> moved the robber`;
     case "steal": return `<b>${escapeHtml(seatName(e.seat))}</b> stole a card from <b>${escapeHtml(seatName(e.victim))}</b>`;
+    case "buyDev": return `<b>${escapeHtml(seatName(e.seat))}</b> bought a development card`;
+    case "playDev": {
+      const names = { knight: "a Knight", road: "Road Building", plenty: "Year of Plenty", monopoly: "Monopoly" };
+      return `<b>${escapeHtml(seatName(e.seat))}</b> played ${names[e.card] || "a card"}`;
+    }
+    case "tradeOffer": return `<b>${escapeHtml(seatName(e.seat))}</b> offered a trade`;
+    case "tradeAccepted": return `<b>${escapeHtml(seatName(e.by))}</b> traded with <b>${escapeHtml(seatName(e.from))}</b>`;
+    case "tradeCancelled": return null;
+    case "longestRoad": return `<b>${escapeHtml(seatName(e.seat))}</b> took Longest Road (${e.length})`;
+    case "largestArmy": return `<b>${escapeHtml(seatName(e.seat))}</b> took Largest Army (${e.knights})`;
     case "endTurn": return null;
     case "gameOver": return `<b>${escapeHtml(seatName(e.seat))}</b> wins!`;
     default: return null;
@@ -420,22 +576,66 @@ function renderBanner() {
   els.statusStrip.textContent = status;
 }
 
-function canAfford(kind) {
+const DEV_COST = { ore: 1, wheat: 1, sheep: 1 };
+
+function canAfford(cost) {
   if (!mine) return false;
-  return Object.entries(COSTS[kind]).every(([res, n]) => mine.hand[res] >= n);
+  return Object.entries(cost).every(([res, n]) => mine.hand[res] >= n);
+}
+
+// Best maritime trade rate I can give for `res`, mirroring the server.
+function bankRate(res) {
+  let rate = 4;
+  for (const port of (pub.ports || [])) {
+    const onPort = port.vertices.some(v => {
+      const occ = pub.occupied.vertices[v];
+      return occ && occ.seat === mySeat;
+    });
+    if (!onPort) continue;
+    if (port.type === res) rate = Math.min(rate, 2);
+    else if (port.type === "3:1") rate = Math.min(rate, 3);
+  }
+  return rate;
 }
 
 function updateButtons() {
   const main = pub.phase === "main" && myTurn();
-  els.rollBtn.disabled = !(pub.phase === "roll" && myTurn());
-  els.buildRoad.disabled = !(main && canAfford("road") && pub.pieces[mySeat].roads > 0);
-  els.buildSettlement.disabled = !(main && canAfford("settlement") && pub.pieces[mySeat].settlements > 0);
-  els.buildCity.disabled = !(main && canAfford("city") && pub.pieces[mySeat].cities > 0);
-  els.tradeBtn.disabled = !(main && mine && RESOURCES.some(r => mine.hand[r] >= 4));
+  els.diceTray.classList.toggle("active", pub.phase === "roll" && myTurn());
+  els.buildRoad.disabled = !(main && canAfford(COSTS.road) && pub.pieces[mySeat].roads > 0);
+  els.buildSettlement.disabled = !(main && canAfford(COSTS.settlement) && pub.pieces[mySeat].settlements > 0);
+  els.buildCity.disabled = !(main && canAfford(COSTS.city) && pub.pieces[mySeat].cities > 0);
+  els.buyDev.disabled = !(main && canAfford(DEV_COST));
+  els.tradeBank.disabled = !(main && mine && RESOURCES.some(r => mine.hand[r] >= bankRate(r)));
+  els.tradePlayers.disabled = !(main && mine && RESOURCES.some(r => mine.hand[r] > 0));
   els.endTurn.disabled = !main;
 
   for (const [btn, kind] of [[els.buildRoad, "road"], [els.buildSettlement, "settlement"], [els.buildCity, "city"]]) {
     btn.classList.toggle("armed", armedBuild === kind);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// development card play flows
+// ---------------------------------------------------------------------------
+
+function playDevCard(card) {
+  disarm();
+  if (card === "knight") {
+    knightPending = true;
+    showToast("Knight: pick a hex to move the robber");
+    updateTargets();
+  } else if (card === "road") {
+    devRoadEdges = [];
+    showToast("Road Building: place two free roads");
+    updateTargets();
+  } else if (card === "plenty") {
+    openResourcePicker("Year of Plenty", "Take any two resources from the bank.", 2, picks => {
+      sendIntent("catan:playYearOfPlenty", { res1: picks[0], res2: picks[1] });
+    });
+  } else if (card === "monopoly") {
+    openResourcePicker("Monopoly", "Name a resource — every other player hands you all of theirs.", 1, picks => {
+      sendIntent("catan:playMonopoly", { resource: picks[0] });
+    });
   }
 }
 
@@ -493,6 +693,11 @@ function updateModals() {
     els.winnerSub.textContent = pub.winner === mySeat
       ? "Congratulations, you settled Catan."
       : "Better luck next game.";
+    // Reveal everyone's final VP (including hidden VP cards).
+    if (pub.finalVP) {
+      els.winnerScores.innerHTML = pub.seats.map((s, i) =>
+        `<div class="score-row"><span class="player-swatch" style="background:${s.colour}"></span>${escapeHtml(s.name)}<b>${pub.finalVP[i]} VP</b></div>`).join("");
+    }
     els.winnerModal.hidden = false;
   }
 }
@@ -529,8 +734,13 @@ function openTradeModal() {
     }
   };
   const refresh = () => {
-    renderRow(els.tradeGive, "Give 4", r => mine.hand[r] >= 4 && r !== receive, r => { give = r; refresh(); }, give);
+    const rateLabel = give ? `Give ${bankRate(give)}` : "Give";
+    renderRow(els.tradeGive, rateLabel, r => mine.hand[r] >= bankRate(r) && r !== receive, r => { give = r; refresh(); }, give);
     renderRow(els.tradeReceive, "Get 1", r => r !== give, r => { receive = r; refresh(); }, receive);
+    const rateNote = document.getElementById("bank-trade-rate");
+    if (rateNote) rateNote.textContent = give
+      ? `Give ${bankRate(give)} ${RESOURCE_NAMES[give]}, receive one of your choice.`
+      : "Ports lower your rate. Pick what to give, then what to receive.";
     els.tradeConfirm.disabled = !(give && receive);
   };
   refresh();
@@ -542,20 +752,143 @@ function openTradeModal() {
   els.tradeModal.hidden = false;
 }
 
-function openStealModal(victims) {
+function openStealModal(victims, event = "catan:moveRobber") {
   els.stealOptions.innerHTML = "";
   for (const v of victims) {
     const btn = document.createElement("button");
     btn.className = "catan-btn";
     btn.innerHTML = `<span class="player-swatch" style="display:inline-block;background:${pub.seats[v].colour}"></span> ${escapeHtml(seatName(v))} (${pub.handCounts[v]} cards)`;
     btn.onclick = () => {
-      sendIntent("catan:moveRobber", { hex: pendingRobberHex, victimSeat: v });
+      sendIntent(event, { hex: pendingRobberHex, victimSeat: v });
       els.stealModal.hidden = true;
       pendingRobberHex = null;
+      knightPending = false;
     };
     els.stealOptions.appendChild(btn);
   }
   els.stealModal.hidden = false;
+}
+
+// Resource picker for Year of Plenty (count 2) and Monopoly (count 1).
+function openResourcePicker(title, prompt, count, onConfirm) {
+  els.resourceTitle.textContent = title;
+  els.resourcePrompt.textContent = prompt;
+  const picked = [];
+  const render = () => {
+    els.resourcePicker.innerHTML = "";
+    for (const res of RESOURCES) {
+      const n = picked.filter(p => p === res).length;
+      const card = document.createElement("button");
+      card.className = `card card-${res}`;
+      card.style.cssText = "width:46px;height:60px;font-size:1.1rem;cursor:pointer;position:relative";
+      card.innerHTML = `<span>${RESOURCE_ICONS[res]}</span>` + (n ? `<span class="card-count">×${n}</span>` : "");
+      card.onclick = () => {
+        if (picked.length >= count) picked.length = 0; // start over once full
+        picked.push(res);
+        if (picked.length > count) picked.shift();
+        render();
+        els.resourceConfirm.disabled = picked.length !== count;
+      };
+      els.resourcePicker.appendChild(card);
+    }
+  };
+  render();
+  els.resourceConfirm.disabled = true;
+  els.resourceConfirm.onclick = () => {
+    if (picked.length !== count) return;
+    els.resourceModal.hidden = true;
+    onConfirm(picked.slice());
+  };
+  els.resourceCancel.onclick = () => { els.resourceModal.hidden = true; };
+  els.resourceModal.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
+// player-to-player trading
+// ---------------------------------------------------------------------------
+
+function openOfferModal() {
+  const give = {}, get = {};
+  let target = null; // null = anyone
+  RESOURCES.forEach(r => { give[r] = 0; get[r] = 0; });
+
+  const renderSide = (container, store, capByHand) => {
+    container.innerHTML = "";
+    for (const res of RESOURCES) {
+      const cell = document.createElement("div");
+      cell.className = "picker-cell";
+      cell.innerHTML = `
+        <div class="card card-${res}" style="width:34px;height:46px;font-size:0.95rem">${RESOURCE_ICONS[res]}</div>
+        <span class="count">${store[res]}</span>
+        <div class="mini-btns">
+          <button type="button" data-d="-1">−</button>
+          <button type="button" data-d="1">+</button>
+        </div>`;
+      cell.querySelector('[data-d="1"]').onclick = () => {
+        if (capByHand && store[res] >= mine.hand[res]) return;
+        store[res]++; refresh();
+      };
+      cell.querySelector('[data-d="-1"]').onclick = () => { if (store[res] > 0) { store[res]--; refresh(); } };
+      container.appendChild(cell);
+    }
+  };
+  const renderTarget = () => {
+    els.offerTarget.innerHTML = '<span class="trade-side-label">With</span>';
+    const mk = (label, val) => {
+      const b = document.createElement("button");
+      b.className = "catan-btn" + (target === val ? " armed" : "");
+      b.textContent = label;
+      b.onclick = () => { target = val; renderTarget(); };
+      els.offerTarget.appendChild(b);
+    };
+    mk("Anyone", null);
+    pub.seats.forEach((s, i) => { if (i !== mySeat) mk(s.name, i); });
+  };
+  const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
+  const refresh = () => {
+    renderSide(els.offerGive, give, true);
+    renderSide(els.offerGet, get, false);
+    els.offerSend.disabled = !(sum(give) > 0 && sum(get) > 0);
+  };
+  refresh();
+  renderTarget();
+  els.offerSend.onclick = () => {
+    const clean = o => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0));
+    sendIntent("catan:proposeTrade", { give: clean(give), get: clean(get), to: target });
+    els.offerModal.hidden = true;
+  };
+  els.offerCancel.onclick = () => { els.offerModal.hidden = true; };
+  els.offerModal.hidden = false;
+}
+
+function describeBundle(b) {
+  return Object.entries(b).map(([r, n]) => `${n}${RESOURCE_ICONS[r]}`).join(" ") || "nothing";
+}
+
+// Show/refresh the incoming-offer modal for a live trade I can respond to.
+function updateIncomingTrade() {
+  const t = pub.trade;
+  const iAmTarget = t && mine && t.from !== mySeat && (t.to === null || t.to === mySeat);
+  if (!iAmTarget) { els.incomingModal.hidden = true; return; }
+  const key = JSON.stringify(t);
+  if (key === dismissedTradeKey) { els.incomingModal.hidden = true; return; }
+  els.incomingTitle.textContent = `${seatName(t.from)} offers a trade`;
+  const haveIt = Object.entries(t.get).every(([r, n]) => mine.hand[r] >= n);
+  els.incomingBody.innerHTML =
+    `<p>They give <b>${describeBundle(t.give)}</b></p>` +
+    `<p>They want <b>${describeBundle(t.get)}</b> from you</p>` +
+    (haveIt ? "" : `<p class="trade-warn">You don't have what they want.</p>`);
+  els.incomingAccept.disabled = !haveIt;
+  els.incomingAccept.onclick = () => {
+    sendIntent("catan:respondTrade", { accept: true });
+    els.incomingModal.hidden = true;
+  };
+  els.incomingDecline.onclick = () => {
+    sendIntent("catan:respondTrade", { accept: false });
+    dismissedTradeKey = JSON.stringify(t);
+    els.incomingModal.hidden = true;
+  };
+  els.incomingModal.hidden = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -583,12 +916,35 @@ function showToast(message) {
 // wire buttons + boot
 // ---------------------------------------------------------------------------
 
-els.rollBtn.addEventListener("click", () => sendIntent("catan:roll"));
+// Dice tray: press and hold to shake, release to throw.
+let diceHolding = false;
+function diceCanRoll() { return pub && pub.phase === "roll" && myTurn(); }
+function startShake(e) {
+  if (!diceCanRoll()) return;
+  e.preventDefault();
+  diceHolding = true;
+  els.dicePair.classList.add("shaking");
+  els.diceHint.textContent = "Release to throw!";
+}
+function throwDice() {
+  els.dicePair.classList.remove("shaking");
+  if (!diceHolding) return;
+  diceHolding = false;
+  els.diceHint.textContent = "Hold to roll";
+  if (diceCanRoll()) sendIntent("catan:roll");
+}
+els.diceTray.addEventListener("pointerdown", startShake);
+els.diceTray.addEventListener("pointerup", throwDice);
+els.diceTray.addEventListener("pointerleave", () => { if (diceHolding) throwDice(); });
+els.diceTray.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (diceCanRoll()) sendIntent("catan:roll"); } });
+
 els.endTurn.addEventListener("click", () => { disarm(); sendIntent("catan:endTurn"); });
 els.buildRoad.addEventListener("click", () => armBuild("road"));
 els.buildSettlement.addEventListener("click", () => armBuild("settlement"));
 els.buildCity.addEventListener("click", () => armBuild("city"));
-els.tradeBtn.addEventListener("click", openTradeModal);
+els.buyDev.addEventListener("click", () => { disarm(); sendIntent("catan:buyDev"); });
+els.tradeBank.addEventListener("click", openTradeModal);
+els.tradePlayers.addEventListener("click", openOfferModal);
 
 if (FIXTURE_MODE) {
   import("./fixture.js").then(({ fixturePublic, fixturePrivate }) => {
