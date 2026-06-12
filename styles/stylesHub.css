@@ -57,3 +57,7 @@
   color: var(--color-fg-muted);
   line-height: 1.4;
 }
+
+.hub-card:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 3px; border-color: var(--color-primary); }
+.hub-card:active { transform: translateY(-1px) scale(0.99); }
+.hub-card-name { color: var(--color-fg); }
