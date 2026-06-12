@@ -17,6 +17,7 @@ import { attachConnectionBanner } from './connection.js';
 // ---- DOM handles ----
 const mapcss             = document.getElementById("map");
 const panocss            = document.getElementById("pano");
+const awaitingStatus     = document.getElementById("awaiting-status");
 const loadingSpinner     = document.getElementById("loading-spinner");
 const compassEl          = document.getElementById("compass");
 const compassImage       = document.getElementById("compass-image");
@@ -32,13 +33,6 @@ const lockSpotButton     = document.getElementById("lockSpotButton");
 const unlockSpotButton   = document.getElementById("unlockSpotButton");
 const guessButton        = document.getElementById("guessButton");
 const hsReturnToStartButton = document.getElementById("hsReturnToStartButton");
-// Legacy floating spectator panel — hidden after the hider-tabs rework.
-const spectatorToggle    = document.getElementById("spectator-toggle");
-const spectatorPanel     = document.getElementById("spectator-panel");
-const guessPicker        = document.getElementById("guess-picker");
-const guessPickerList    = document.getElementById("guess-picker-list");
-const guessPickerCancel  = document.getElementById("guess-picker-cancel");
-
 // Top tab strip — only used while the current player is the hider.
 const hiderTabs          = document.getElementById("hider-tabs");
 const hiderTabsList      = document.getElementById("hider-tabs-list");
@@ -432,6 +426,7 @@ function enterHidePhase() {
   phaseBanner.style.display = "";
   panocss.classList.add("hidden");
   panocss.classList.remove("awaiting-spectator");
+  awaitingStatus.hidden = true;
   panocss.classList.remove("spectating-locked");
   mapcss.classList.remove("swapped");
   hiderTabs.classList.add("hidden");
@@ -512,11 +507,7 @@ function startSeekRound(data) {
   updateFloatingPanelForPhase();
   renderRoster();
   clearSpectatorPano();
-  spectatorPanel.classList.add("hidden");
   timer.style.display = roundTimerSec > 0 ? "block" : "none";
-  // Legacy floating #spectator-toggle is unused after the hider-tabs rework;
-  // keep it hidden regardless of role.
-  spectatorToggle.classList.add("hidden");
 
   // Each sub-round (each hider's spot) starts from a blank-slate map view.
   if (map) {
@@ -556,6 +547,7 @@ function resolveOwnershipAsOwner() {
   // we're waiting for a seeker to start moving.
   ensureSeekStreetView();
   panocss.classList.add("awaiting-spectator");
+  awaitingStatus.hidden = false;
   // Drop a flag on the mini-map at their own hiding spot, so they have a
   // clear reference for incoming pins.
   if (myHidingSpot) {
@@ -575,6 +567,7 @@ function resolveOwnershipAsSeeker() {
   // classic game). Click map (or country polygon) to drop a single pin.
   panocss.classList.remove("hidden");
   panocss.classList.remove("awaiting-spectator");
+  awaitingStatus.hidden = true;
   panocss.classList.remove("spectating-locked");  // seeker drives their own pano
   stopSpectatorInterpolation();
   mapcss.classList.add("swapped");
@@ -945,14 +938,6 @@ guessButton.addEventListener("click", () => {
   renderRoster();
 });
 
-// Legacy guess-picker modal — no longer used. Kept in DOM but hidden.
-if (guessPickerCancel) {
-  guessPickerCancel.addEventListener("click", () => {
-    guessPicker.classList.add("hidden");
-  });
-}
-if (guessPicker) guessPicker.classList.add("hidden");
-
 // Host clicks Next Round from the reveal overlay → server advances.
 if (revealNextButton) {
   revealNextButton.addEventListener("click", () => {
@@ -1007,9 +992,11 @@ function applySpectatorToMainPano() {
   const view = liveViews[spectatorTarget];
   if (!view || !view.panoId) {
     panocss.classList.add("awaiting-spectator");
+    awaitingStatus.hidden = false;
     return;
   }
   panocss.classList.remove("awaiting-spectator");
+  awaitingStatus.hidden = true;
   ensureSeekStreetView();
 
   if (spectatorAppliedPanoId !== view.panoId) {
@@ -1078,6 +1065,7 @@ function stopSpectatorInterpolation() {
 
 function clearSpectatorPano() {
   panocss.classList.remove("awaiting-spectator");
+  awaitingStatus.hidden = true;
 }
 
 // Play the brief forward-warp animation (see .spectator-warping in CSS) on
@@ -1131,7 +1119,6 @@ function showReveal(payload) {
   panocss.classList.add("hidden");
   panocss.classList.remove("spectating-locked");
   stopSpectatorInterpolation();
-  spectatorPanel.classList.add("hidden");
   clearRoundMap();
   const allCoords = [];
   if (payload.ownerPosition) {
@@ -1194,6 +1181,7 @@ function showReveal(payload) {
   // Hide the hider's spectator chrome while reveal is showing.
   hiderTabs.classList.add("hidden");
   panocss.classList.remove("awaiting-spectator");
+  awaitingStatus.hidden = true;
 
   revealOverlay.classList.remove("hidden");
   if (revealCountdownInterval) { clearInterval(revealCountdownInterval); revealCountdownInterval = null; }
@@ -1224,8 +1212,6 @@ function hideReveal() {
 function showFinalScores(payload) {
   // { totals, players, roundOrder, guesses, locked }
   hideReveal();
-  spectatorPanel.classList.add("hidden");
-  spectatorToggle.classList.add("hidden");
   if (endGameButton) endGameButton.classList.add("hidden");
   if (countdownOverlay) countdownOverlay.classList.add("hidden");
   timer.style.display = "none";

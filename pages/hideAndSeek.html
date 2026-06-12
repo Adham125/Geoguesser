@@ -34,6 +34,7 @@
     <!-- Street View pane; hidden during HIDE, covers screen during SEEK. -->
     <div id="pano" class="hidden">
       <div class="loading-spinner" id="loading-spinner"></div>
+      <div id="awaiting-status" class="awaiting-status" role="status" aria-live="polite" hidden>Waiting for a seeker to start moving…</div>
     </div>
 
     <!-- Phase banner top-center. -->
@@ -62,16 +63,6 @@
       <div id="hider-tabs-list" class="hider-tabs-list"></div>
     </div>
 
-    <!-- Legacy spectator elements (kept in DOM but unused after the hider
-         rework — spectating now uses #pano directly with #hider-tabs). -->
-    <div id="spectator-panel" class="hs-panel spectator-panel hidden" aria-hidden="true">
-      <div id="spectator-tabs"></div>
-      <div id="spectator-pano"></div>
-      <p id="spectator-empty"></p>
-      <button id="spectator-close" class="icon-btn">×</button>
-    </div>
-    <button id="spectator-toggle" class="spectator-toggle hidden" aria-hidden="true"><span>Spectate</span></button>
-
     <!-- Floating action panel (Lock in HIDE; Guess in SEEK). -->
     <div id="floating-panel">
       <button id="lockSpotButton" class="actionButton">Lock In Hiding Spot</button>
@@ -94,17 +85,6 @@
     <div id="hs-countdown" class="hs-countdown hidden" role="status" aria-live="polite">
       <div class="hs-countdown-label">Seek phase starting</div>
       <div class="hs-countdown-number" id="hs-countdown-number">3</div>
-    </div>
-
-    <!-- Guess picker modal (SEEK). -->
-    <div id="guess-picker" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="guess-picker-title">
-      <div class="modal-card">
-        <h3 id="guess-picker-title" class="modal-title">Who hid this spot?</h3>
-        <ul id="guess-picker-list" class="guess-list"></ul>
-        <div class="button-group">
-          <button id="guess-picker-cancel" class="actionButton">Cancel</button>
-        </div>
-      </div>
     </div>
 
     <!-- Round reveal overlay (SEEK → REVEAL). Host gates next-round advance. -->
