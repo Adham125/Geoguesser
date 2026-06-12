@@ -67,7 +67,7 @@ signUpButton.addEventListener('click', (event) => {
                     body: JSON.stringify({ email, password }), credentials: 'include'
                 });
                 const data = await r.json().catch(() => ({}));
-                if (r.ok && data.success) { window.location.href = './pages/hub.html'; return; }
+                if (r.ok && data.success) { window.location.href = './pages/playerDetails.html'; return; }
                 showMessage("Account created — please log in.", { title: "Account created" });
             } else {
                 showMessage((response && response.message) || "Signup failed.", { title: "Signup failed" });
