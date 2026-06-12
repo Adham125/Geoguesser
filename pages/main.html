@@ -102,21 +102,18 @@
       </select>
     </div>
 
-    <!-- Join Buttons -->
-    <div class="start-button">
-      <button id="join-btn">Create Lobby</button>
+    <div class="cta-group">
+      <h3>Play solo</h3>
+      <button id="start-btn" class="btn btn--secondary">Play Solo</button>
     </div>
 
-    <div id="join-room-container" class="start-button">
-      <form id="join-room-form">
-        <button id="join-room-button" type="submit">Join Room</button>
+    <div class="cta-group">
+      <h3>Play with friends</h3>
+      <button id="join-btn" class="btn btn--primary">Create Lobby</button>
+      <form id="join-room-form" class="join-inline">
         <input type="text" id="room-code-input" placeholder="Enter room code">
+        <button id="join-room-button" type="submit" class="btn btn--secondary">Join Room</button>
       </form>
-    </div>
-
-    <!-- Start Button -->
-    <div class="start-button">
-      <button id="start-btn">Start Game</button>
     </div>
   </div>
 

@@ -41,7 +41,7 @@ authForm.addEventListener('submit', async (event) => {
         });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data.success) {
-            window.location.href = './pages/playerDetails.html';
+            window.location.href = './pages/hub.html';
             return;
         }
         showMessage(data.message || "Login failed. Check your email and password.", { title: "Login failed" });
@@ -67,7 +67,7 @@ signUpButton.addEventListener('click', (event) => {
                     body: JSON.stringify({ email, password }), credentials: 'include'
                 });
                 const data = await r.json().catch(() => ({}));
-                if (r.ok && data.success) { window.location.href = './pages/playerDetails.html'; return; }
+                if (r.ok && data.success) { window.location.href = './pages/hub.html'; return; }
                 showMessage("Account created — please log in.", { title: "Account created" });
             } else {
                 showMessage((response && response.message) || "Signup failed.", { title: "Signup failed" });
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 guestButton.innerText = `Logged in: ${response.username || response.email || ''}`;
             }
             if (!sessionStorage.getItem("stay")) {
-                window.location.href = './pages/playerDetails.html';
+                window.location.href = './pages/hub.html';
             }
         }
     })

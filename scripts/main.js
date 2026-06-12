@@ -19,13 +19,18 @@ const socket = io(server, {
 });
 attachConnectionBanner(socket);
 
-document.addEventListener('DOMContentLoaded', () => {
-  //const cookie = document.cookie
-  socket.emit("validateCookie", {}, response => {
-    if (response.success){
-      loginStatus.innerText = `Logged in: ${response.username}`;
-    }
-  })
+loginStatus.textContent = "";
+loginButton.style.display = "none";
+socket.emit("validateCookie", {}, response => {
+  if (response && response.success) {
+    loginStatus.textContent = `Logged in: ${response.username}`;
+    loginStatus.setAttribute("aria-label", "Open your profile");
+    loginButton.style.display = "";
+  } else {
+    loginStatus.textContent = "Sign in";
+    loginStatus.setAttribute("aria-label", "Sign in");
+    loginStatus.onclick = () => { window.location.href = "../index.html"; };
+  }
 });
 
 // Preserve spotify_* keys through the cross-page reset so OAuth tokens and

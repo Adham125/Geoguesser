@@ -96,20 +96,6 @@ body {
     color: var(--color-fg);
   }
 
-/* Shim: landing-card CTA buttons inherit the shared primary button look.
-   A later plan replaces these with explicit .btn classes and removes this rule.
-   Scoped to .landing-page so popup/kofi/icon buttons are unaffected. */
-.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later) {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  padding: 10px 20px; font-family: var(--font-heading); font-size: var(--font-size-base);
-  font-weight: 600; border: 1px solid transparent; border-radius: var(--radius-md);
-  background: var(--color-primary); color: var(--color-on-primary); cursor: pointer;
-  box-shadow: var(--shadow-primary);
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-}
-.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):hover:not(:disabled) { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):active:not(:disabled) { background: var(--color-primary-active); transform: scale(0.98); }
-.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):disabled { background: var(--color-disabled-bg); color: var(--color-disabled-fg); cursor: not-allowed; box-shadow: none; transform: none; }
 
   #top-right-container {
     position: absolute;
@@ -541,3 +527,9 @@ body {
   from { opacity: 0; transform: scale(0.94); }
   to   { opacity: 1; transform: scale(1); }
 }
+
+/* CTA groups (main.html solo vs multiplayer split) */
+.cta-group { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); align-items: stretch; }
+.cta-group > h3 { margin: 0 0 var(--space-1); }
+.join-inline { display: flex; gap: var(--space-2); }
+.join-inline #room-code-input { flex: 1; }
