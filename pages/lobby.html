@@ -26,7 +26,7 @@
     gtag('config', 'G-DHZBWJCCDC');
   </script>
 </head>
-<body>
+<body class="lobby-page">
   <a href="./main.html" id="back-button">&lt; Back</a>
   <div class="blurry-background"></div>
   <div id="player-list">
@@ -38,7 +38,11 @@
   <div class="landing-page">
     <h1>Private Room</h1>
 
-    <h2 id="roomCode"></h2>
+    <button type="button" class="room-banner" id="roomCodeBanner" aria-label="Copy room code">
+      <span class="room-banner-label">Room code</span>
+      <span class="room-banner-code" id="roomCode">—</span>
+      <span class="room-banner-copied" id="roomCopied" hidden>Copied!</span>
+    </button>
 
     <!-- Game Mode Selection -->
     <div class="game-mode-selection">
@@ -119,6 +123,7 @@
     </div>
 
     <button class="actionButton" id="start-btn">Start Game</button>
+    <p id="host-hint" class="hint"></p>
   </div>
 
   <div class="kofi-footer-fixed">

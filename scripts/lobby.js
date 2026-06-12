@@ -42,7 +42,13 @@ startButton.disabled = true;
 
 socket.emit("joinedRoom", [roomName, playerName, colour])
 
-roomCodeDisplay.textContent = `Room Code: ${roomName}`;
+const roomCodeBanner = document.getElementById("roomCodeBanner");
+const roomCopied = document.getElementById("roomCopied");
+roomCodeDisplay.textContent = roomName;
+roomCodeBanner?.addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(roomName); } catch {}
+  if (roomCopied) { roomCopied.hidden = false; setTimeout(() => { roomCopied.hidden = true; }, 1500); }
+});
 
 startButton.addEventListener("click", function() {
     if (currentHostId !== socket.id) return;
@@ -179,6 +185,10 @@ socket.on("hostChanged", ({ hostId }) => {
     localStorage.setItem("roomHost", amHost ? "true" : "false");
     startButton.disabled = !amHost;
     showToast(amHost ? "You are now the host." : "Host changed.", { type: "info", duration: 2500 });
+    const optionControls = [gameModeSelect, movingCheck, zoomingCheck, timer, timerDropdown, roundsSelect, countrySelect, hsAllowPhotospheresCheck].filter(Boolean);
+    optionControls.forEach(el => { el.disabled = !amHost; });
+    const hint = document.getElementById("host-hint");
+    if (hint) hint.textContent = amHost ? "" : "The host controls the game settings.";
     renderPlayerList();
 });
 
