@@ -61,3 +61,23 @@
 .hub-card:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 3px; border-color: var(--color-primary); }
 .hub-card:active { transform: translateY(-1px) scale(0.99); }
 .hub-card-name { color: var(--color-fg); }
+
+.hub-leaderboards-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  padding: var(--space-2) var(--space-5);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+
+.hub-leaderboards-link:hover { color: var(--color-fg); border-color: var(--color-accent); }
+.hub-leaderboards-link:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 3px; }

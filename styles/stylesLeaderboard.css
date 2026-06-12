@@ -1,0 +1,83 @@
+@import url('./tokens.css');
+@import url('./components.css');
+
+/* Leaderboards page — layered on top of stylesLanding.css (same pattern
+   as the hub). Two board panels, side by side on desktop, stacked on
+   phones. */
+
+.leaderboard-page {
+  width: min(94vw, 880px);
+}
+
+.lb-boards {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* display:flex above would otherwise beat the UA [hidden] rule. */
+.lb-boards[hidden] { display: none; }
+
+.lb-board {
+  flex: 1 1 340px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.lb-board h2 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.03em;
+  margin: 0 0 var(--space-3);
+}
+
+.lb-board table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.lb-board th {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-fg-muted);
+  text-align: right;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.lb-board td {
+  padding: var(--space-2);
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lb-board tr:last-child td { border-bottom: none; }
+
+/* Rank column centred, player column left-aligned. */
+.lb-board th:first-child, .lb-board td:first-child { text-align: center; width: 2ch; }
+.lb-board th:nth-child(2), .lb-board td:nth-child(2) { text-align: left; }
+
+.lb-name { font-weight: 600; overflow-wrap: anywhere; }
+
+.lb-rank { font-family: var(--font-heading); color: var(--color-fg-muted); }
+
+/* Gold / silver / bronze ranks (one-off podium colours, not in tokens). */
+.lb-board tbody tr:nth-child(1) .lb-rank { color: #FFD700; }
+.lb-board tbody tr:nth-child(2) .lb-rank { color: #C0C0C0; }
+.lb-board tbody tr:nth-child(3) .lb-rank { color: #CD7F32; }
+
+.lb-empty td {
+  text-align: center;
+  color: var(--color-fg-muted);
+  padding: var(--space-5) var(--space-2);
+}
+
+.lb-board .hint { text-align: center; }

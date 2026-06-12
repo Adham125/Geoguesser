@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="../imgs/globe.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboards — Adham Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="../styles/stylesLanding.css">
+  <link rel="stylesheet" href="../styles/stylesLeaderboard.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Google tag (gtag.js) — production analytics. Harmless on localhost. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHZBWJCCDC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DHZBWJCCDC');
+  </script>
+</head>
+<body>
+  <a href="./hub.html" id="back-button">&lt; Back</a>
+  <div class="blurry-background"></div>
+
+  <div class="landing-page leaderboard-page">
+    <h1>Leaderboards</h1>
+
+    <p id="lb-status" class="hint" role="status">Loading…</p>
+
+    <div class="lb-boards" hidden>
+      <section class="lb-board" aria-labelledby="lb-geo-title">
+        <h2 id="lb-geo-title">🌍 GeoGuesser</h2>
+        <table>
+          <thead>
+            <tr><th scope="col">#</th><th scope="col">Player</th><th scope="col">Avg</th><th scope="col">Best</th><th scope="col">Rounds</th></tr>
+          </thead>
+          <tbody id="lb-geo-rows"></tbody>
+        </table>
+        <p class="hint" id="lb-geo-hint"></p>
+      </section>
+
+      <section class="lb-board" aria-labelledby="lb-catan-title">
+        <h2 id="lb-catan-title">🏝️ Catan</h2>
+        <table>
+          <thead>
+            <tr><th scope="col">#</th><th scope="col">Player</th><th scope="col">Wins</th><th scope="col">Games</th><th scope="col">Win %</th></tr>
+          </thead>
+          <tbody id="lb-catan-rows"></tbody>
+        </table>
+        <p class="hint">Finish a game of Catan while signed in to get ranked.</p>
+      </section>
+    </div>
+  </div>
+
+  <script type="module" src="../scripts/leaderboard.js"></script>
+</body>
+</html>
