@@ -1,34 +1,65 @@
-/* Shared design tokens — imported by style.css, stylesLanding.css, styleHideAndSeek.css. */
-
-@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Chakra+Petch:wght@300;400;500;600;700&display=swap');
+/* Shared design tokens v2 — imported by style.css, stylesLanding.css,
+   styleHideAndSeek.css, stylesHub.css, components.css. Dark theme.
+   NOTE: every variable name consumed across the site is preserved;
+   values evolved (deeper navy, 3 elevation steps, layered shadows).
+   Fonts now load via <link> in each page <head>, NOT @import here. */
 
 :root {
-  /* Palette — dark mode forced for all users. */
-  --color-primary: #2563EB;
-  --color-primary-hover: #1D4ED8;
-  --color-primary-active: #1E40AF;
-  --color-on-primary: #FFFFFF;
-  --color-secondary: #7C3AED;
-  --color-accent: #F59E0B;
-  --color-accent-hover: #D97706;
-  --color-bg: #0B1220;
-  --color-bg-alt: #0F1A33;
-  --color-surface: #111C36;
-  --color-surface-2: #0C1530;
-  --color-fg: #E2E8F0;
-  --color-fg-muted: #94A3B8;
-  --color-muted: #0F1A33;
-  --color-border: #1E2A47;
-  --color-border-strong: #334155;
-  --color-destructive: #DC2626;
-  --color-destructive-hover: #B91C1C;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-ring: #3B82F6;
+  /* ---- Backgrounds & elevation (3 steps) ---- */
+  --color-bg: #070A14;
+  --color-bg-alt: #0A101F;
+  --color-surface: #0E1424;      /* primary card surface (name kept) */
+  --color-surface-1: #0E1424;    /* alias of --color-surface */
+  --color-surface-2: #131B30;    /* nested panels, inputs */
+  --color-surface-3: #19233C;    /* hover/raised, menus (was undefined) */
+  --color-muted: #131B30;        /* hover fill (name kept) */
 
-  /* Typography */
-  --font-heading: "Russo One", "Impact", "Arial Black", sans-serif;
-  --font-body: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  /* ---- Text ---- */
+  --color-fg: #E6EAF2;
+  --color-fg-muted: #9AA5B8;
+  --color-fg-faint: #69748A;
+
+  /* ---- Primary (blue) ---- */
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2D6FE3;
+  --color-primary-active: #2563EB;
+  --color-on-primary: #FFFFFF;
+
+  /* ---- Secondary (violet — retained for legacy heading gradients) ---- */
+  --color-secondary: #7C3AED;
+
+  /* ---- Accent — amber, reserved for game identity (room code, HOST, timer) ---- */
+  --color-accent: #F5A623;
+  --color-accent-hover: #D98E1F;
+  --color-on-accent: #1A1200;
+
+  /* ---- Status ---- */
+  --color-success: #22C55E;
+  --color-success-hover: #16A34A;
+  --color-destructive: #EF4444;
+  --color-destructive-hover: #DC2626;
+  --color-on-destructive: #FFFFFF;
+  --color-warning: #F5A623;
+  --color-on-warning: #1A1200;
+
+  /* ---- Disabled (reads as present-but-inactive, ≥3:1 label) ---- */
+  --color-disabled-bg: #161E33;
+  --color-disabled-fg: #8A94A8;
+
+  /* ---- Borders — hairline low-alpha white ---- */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* ---- Focus ---- */
+  --color-ring: #60A5FA;
+
+  /* ---- Glass (floating chrome) ---- */
+  --glass-bg: rgba(14, 20, 36, 0.72);
+  --glass-blur: blur(12px) saturate(1.3);
+
+  /* ---- Typography ---- */
+  --font-heading: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -36,8 +67,9 @@
   --font-size-xl: 1.375rem;
   --font-size-2xl: 1.75rem;
   --font-size-3xl: 2.25rem;
+  --font-size-4xl: 2.75rem;
 
-  /* Spacing — 4pt scale */
+  /* ---- Spacing — 4pt scale ---- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -48,25 +80,36 @@
   --space-10: 40px;
   --space-12: 48px;
 
-  /* Radii */
+  /* ---- Radii ---- */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* Shadows — dark mode depth (stronger black for contrast on dark surfaces). */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --shadow-primary: 0 6px 18px rgba(37, 99, 235, 0.28);
-  --shadow-accent: 0 6px 18px rgba(245, 158, 11, 0.30);
-  --shadow-danger: 0 6px 18px rgba(220, 38, 38, 0.28);
+  /* ---- Shadows — layered, subtle ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.4), 0 20px 48px rgba(0, 0, 0, 0.55);
+  --shadow-primary: 0 6px 18px rgba(59, 130, 246, 0.28);
+  --shadow-accent: 0 6px 18px rgba(245, 166, 35, 0.28);
+  --shadow-danger: 0 6px 18px rgba(239, 68, 68, 0.28);
 
-  /* Motion */
+  /* ---- Z-index scale ----
+     Modal/toast sit above 1000 because Leaflet (profile) uses panes 400-1000. */
+  --z-raised: 10;
+  --z-chrome: 500;
+  --z-overlay: 900;
+  --z-modal: 1100;
+  --z-toast: 1200;
+
+  /* ---- Motion ---- */
   --dur-fast: 150ms;
   --dur-med: 220ms;
   --dur-slow: 400ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---- Breakpoints (reference only — CSS vars can't be used in @media).
+     Use exactly these three everywhere: 480px / 768px / 1024px. ---- */
 }
 
 @media (prefers-reduced-motion: reduce) {
