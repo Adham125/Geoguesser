@@ -294,7 +294,7 @@ body {
 }
 
 /* Lobby: two-card row that stacks on phones. */
-body.lobby-page { flex-direction: row; gap: var(--space-6); flex-wrap: wrap; align-items: flex-start; }
+body.lobby-page { flex-direction: row; gap: var(--space-6); flex-wrap: wrap; align-items: center; }
 @media (max-width: 768px) {
   body.lobby-page { flex-direction: column; align-items: center; }
 }

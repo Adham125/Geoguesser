@@ -303,10 +303,10 @@ h1, h2, h3, h4, h5 {
 }
 
 .round-indicator {
-  position: absolute; top: 16px; right: 20px; z-index: var(--z-raised);
+  position: absolute; top: 80px; right: 20px; z-index: var(--z-raised);
   font-family: var(--font-heading); font-size: var(--font-size-sm); letter-spacing: 0.04em;
   background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   color: var(--color-fg); border: 1px solid var(--color-border); border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-4);
 }
-@media (max-width: 480px) { .round-indicator { top: 8px; right: 8px; font-size: var(--font-size-xs); } }
+@media (max-width: 480px) { .round-indicator { top: 52px; right: 8px; font-size: var(--font-size-xs); } }
