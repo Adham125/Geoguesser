@@ -1,6 +1,7 @@
 import { pickRandomPoint } from './geojson.js';
 import { serverURL as server } from './config.js';
 import { showMessage, showConfirm } from './popup.js';
+import { attachConnectionBanner } from './connection.js';
 
 const geojsonFilePath = '../geojson/world.geojson';
 var map;
@@ -61,6 +62,7 @@ var ongoingScoreElement = document.getElementById('player-scores');
 const socket = io(server, {
   withCredentials: true
 });
+attachConnectionBanner(socket);
 
 socket.emit("loadAPIKeyMaps", (callback) => {
   let key = callback.key
@@ -76,6 +78,13 @@ var roomName = JSON.parse(localStorage.getItem("roomCode"))
 var hosting = JSON.parse(localStorage.getItem("roomHost"))
 var playerName = localStorage.getItem("playerName");
 var playerColour = localStorage.getItem("playerColour");
+
+if (!options || !gamemode || roomName == null) {
+  // Arrived without game setup (deep link / back-nav after localStorage.clear()).
+  // Redirect back to the landing page instead of throwing on options.timer.
+  window.location.href = "./main.html";
+}
+
 var playerScoreMap = {}
 // Current host socket id — kept in sync via `hostChanged` so mid-game host
 // changes (original host left, transfer) flip host-only UI automatically.

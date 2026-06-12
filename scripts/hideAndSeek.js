@@ -1,5 +1,6 @@
 import { serverURL as server } from './config.js';
 import { showMessage, showConfirm } from './popup.js';
+import { attachConnectionBanner } from './connection.js';
 
 // =====================================================================
 // Hide & Seek — two-phase multiplayer client.
@@ -67,6 +68,7 @@ const playerColour = localStorage.getItem("playerColour");
 
 // ---- Client state machine ----
 let phase = "hide";                 // hide | seek | reveal | final
+let lastRevealPayload = null;       // cached so hostChanged can re-render reveal controls
 let roomPlayers = {};               // { sid: { name, colour } } — kept in sync from hsRoster / hsRoundStart
 let readySet = new Set();           // who's locked in, during HIDE
 let myHidingSpot = null;            // { panoId, lat, lng, heading, pitch } after we lock
@@ -133,6 +135,7 @@ let roundPolylines = [];            // polylines drawn at reveal
 
 // ---- Socket ----
 const socket = io(server, { withCredentials: true });
+attachConnectionBanner(socket);
 
 socket.emit("loadAPIKeyMaps", (callback) => {
   const script = document.createElement("script");
@@ -141,6 +144,10 @@ socket.emit("loadAPIKeyMaps", (callback) => {
   script.defer = true;
   document.body.appendChild(script);
 });
+
+if (!roomName) {
+  window.location.href = "./main.html";
+}
 
 socket.emit("joinedGame", [roomName, playerName, playerColour]);
 
@@ -175,6 +182,12 @@ socket.on("hostChanged", ({ hostId }) => {
   }
   // Roster re-render updates the HOST badge and the Start Seek button.
   renderRoster();
+  // If a reveal is on-screen when the host changes, refresh its controls so
+  // the newly-promoted host can advance the round (else the game softlocks).
+  const revealOverlayEl = document.getElementById("reveal-overlay");
+  if (revealOverlayEl && !revealOverlayEl.classList.contains("hidden") && lastRevealPayload) {
+    showReveal(lastRevealPayload);
+  }
 });
 
 socket.on("kicked", async ({ reason } = {}) => {
@@ -1087,6 +1100,7 @@ function playSpectatorWarp() {
 function showReveal(payload) {
   // { roundIdx, ownerId, ownerPosition, ownerDisconnected, guesses, delta, scoresTotal }
   // guesses[seekerId] = { position, colour, distanceKm, score } | null
+  lastRevealPayload = payload;
   phase = "reveal";
   revealedOwnerId = payload.ownerId;
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
