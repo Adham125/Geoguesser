@@ -33,19 +33,22 @@
     <h1>Welcome to Adham Games!</h1>
     <h2>Login / Sign up</h2>
 
-    <div>
-        <input autocomplete="email" type="email" id="username-input" placeholder="Enter Email">
-        <input autocomplete="current-password" type="password" id="password-input" placeholder="Enter Password">
-    </div>
-    <!-- Join Buttons -->
-    <div class="start-button">
-      <button id="login">Login</button>
-    </div>
+    <form id="auth-form">
+      <div>
+          <input autocomplete="email" type="email" id="username-input" placeholder="Enter Email">
+          <input autocomplete="current-password" type="password" id="password-input" placeholder="Enter Password">
+      </div>
+      <!-- Join Buttons -->
+      <div class="start-button">
+        <button id="login" type="submit">Login</button>
+      </div>
 
-    <div id="signUp-container" class="start-button">
-      <button id="signUp-button">Sign Up</button>
-    </div>
+      <div id="signUp-container" class="start-button">
+        <button id="signUp-button" type="button">Sign Up</button>
+      </div>
+    </form>
 
+  </div>
   <script type="module" src="./scripts/login.js"></script>
 </body>
 </html>
