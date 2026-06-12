@@ -1,32 +1,5 @@
 @import url('./tokens.css');
-
-/* Back button — pill-style card, consistent across every page using this
-   stylesheet (index / main / lobby / playerDetails / profile). */
-#back-button {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 30;
-    font-family: var(--font-heading);
-    font-size: var(--font-size-sm);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-fg);
-    text-decoration: none;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-sm);
-    transition: color var(--dur-fast) var(--ease-out),
-                background var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-fast) var(--ease-out);
-}
-#back-button:hover {
-    color: var(--color-primary);
-    background: var(--color-muted);
-    box-shadow: var(--shadow-md);
-}
+@import url('./components.css');
 
 /*----------------------------------------Landing Page----------------------------------------*/
 body {
@@ -38,12 +11,6 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-  }
-
-  :focus-visible {
-    outline: 3px solid var(--color-ring);
-    outline-offset: 2px;
-    border-radius: var(--radius-sm);
   }
 
   .landing-page {
@@ -126,41 +93,20 @@ body {
     color: var(--color-fg);
   }
 
-  button {
-    padding: var(--space-3) var(--space-5);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-base);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-    color: var(--color-on-primary);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    box-shadow: var(--shadow-primary);
-    transition: transform var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-fast) var(--ease-out),
-                background var(--dur-fast) var(--ease-out);
-  }
-
-  button:hover:not(:disabled) {
-    background: linear-gradient(180deg, var(--color-primary-hover) 0%, var(--color-primary-active) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
-  }
-
-  button:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
-  }
-
-  button:disabled {
-    background: var(--color-border-strong);
-    color: #64748B;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-  }
+/* Shim: landing-card CTA buttons inherit the shared primary button look.
+   A later plan replaces these with explicit .btn classes and removes this rule.
+   Scoped to .landing-page so popup/kofi/icon buttons are unaffected. */
+.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later) {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: 10px 20px; font-family: var(--font-heading); font-size: var(--font-size-base);
+  font-weight: 600; border: 1px solid transparent; border-radius: var(--radius-md);
+  background: var(--color-primary); color: var(--color-on-primary); cursor: pointer;
+  box-shadow: var(--shadow-primary);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):hover:not(:disabled) { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):active:not(:disabled) { background: var(--color-primary-active); transform: scale(0.98); }
+.landing-page button:not(.kofi-popup-cta):not(.kofi-popup-later):disabled { background: var(--color-disabled-bg); color: var(--color-disabled-fg); cursor: not-allowed; box-shadow: none; transform: none; }
 
   #top-right-container {
     position: absolute;
@@ -485,76 +431,6 @@ body {
   background: rgba(220, 38, 38, 0.15);
 }
 
-#player-list .host-badge {
-  display: inline-block;
-  margin-left: auto;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #111;
-  background: #FFD166;
-  border-radius: 999px;
-  line-height: 1.4;
-  flex-shrink: 0;
-}
-
-/* Ko-fi support pill — shared styling across every placement (fixed
-   corner pill, inline pill in scoresMenu, etc.). Glass-blurred dark
-   background + accent-gold on hover. Identical in style.css. */
-.kofi-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  color: var(--color-fg-muted);
-  background: rgba(17, 28, 54, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-md);
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  text-decoration: none;
-  white-space: nowrap;
-  animation: kofi-pulse-in 600ms var(--ease-out) 400ms both;
-  transition: color var(--dur-fast) var(--ease-out),
-              border-color var(--dur-fast) var(--ease-out),
-              background var(--dur-fast) var(--ease-out),
-              transform var(--dur-fast) var(--ease-out);
-}
-.kofi-link:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-  background: rgba(245, 158, 11, 0.10);
-  transform: translateY(-1px);
-}
-.kofi-link:focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
-}
-.kofi-link svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-@keyframes kofi-pulse-in {
-  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
-  60%  { opacity: 1; transform: translateY(-2px) scale(1.03); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-/* Wrapper — positioning only. The pill styling is on .kofi-link. */
-.kofi-footer-fixed {
-  position: fixed;
-  right: var(--space-4);
-  bottom: var(--space-4);
-  z-index: 50;
-}
-@media (max-width: 600px) {
-  .kofi-footer-fixed { right: var(--space-3); bottom: var(--space-3); }
-  .kofi-link { font-size: var(--font-size-xs); padding: 6px var(--space-3); }
-}
 
 /* Ko-fi popup (main.html only). Modal overlay with dim backdrop; shows
    ~25% of qualifying page loads with a 7-day cooldown. State persists in
