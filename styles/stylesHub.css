@@ -1,3 +1,6 @@
+@import url('./tokens.css');
+@import url('./components.css');
+
 /* Game-selection hub — layered on top of stylesLanding.css. */
 
 .hub-page {

@@ -75,7 +75,7 @@ function injectStyles() {
       color: var(--color-destructive, #EF4444);
       border-color: var(--color-destructive, #EF4444);
     }
-    .popup-btn--danger:hover { background: var(--color-destructive, #EF4444); color: #fff; }
+    .popup-btn--danger:hover { background: var(--color-destructive-hover, #DC2626); color: #fff; }
     .popup-btn--ghost { background: transparent; border-color: var(--color-border, rgba(255,255,255,0.08)); }
 
     #toast-root {
