@@ -33,6 +33,7 @@ body.catan {
   --c-ok-hover: #3F8A4D;
   --c-danger: #C0392B;
   --c-highlight: #FFD75E;
+  --c-focus: #2C6FB0;
 
   /* Type */
   --f-display: "Fredoka", "Trebuchet MS", sans-serif;
