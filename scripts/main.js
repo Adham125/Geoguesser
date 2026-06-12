@@ -25,6 +25,7 @@ socket.emit("validateCookie", {}, response => {
   if (response && response.success) {
     loginStatus.textContent = `Logged in: ${response.username}`;
     loginStatus.setAttribute("aria-label", "Open your profile");
+    loginStatus.onclick = () => { window.location.href = './profile.html'; };
     loginButton.style.display = "";
   } else {
     loginStatus.textContent = "Sign in";
@@ -47,10 +48,6 @@ socket.emit("validateCookie", {}, response => {
 })();
 
 roundsSelect.value = "99999"
-
-loginStatus.addEventListener("click", (event) => {
-  window.location.href = './profile.html';
-})
 
 loginButton.addEventListener("click", (event) => {
   sessionStorage.setItem("stay", true)

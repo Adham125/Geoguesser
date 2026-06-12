@@ -90,16 +90,22 @@ const els = {
 // accessible modal helpers
 // ---------------------------------------------------------------------------
 
+let currentModalEl = null;
 let releaseModal = null;
 function openModal(el, { dismissable = true, onDismiss } = {}) {
+  // Catan shows one modal at a time; close any currently-open one first so
+  // its focus trap is released (prevents a leaked keydown listener).
+  if (currentModalEl && currentModalEl !== el) closeModal(currentModalEl);
   el.hidden = false;
-  releaseModal = trapFocus(el, dismissable
-    ? { onEscape: () => { closeModal(el); if (onDismiss) onDismiss(); } }
-    : {});
+  currentModalEl = el;
+  releaseModal = trapFocus(el, dismissable ? { onEscape: () => { closeModal(el); if (onDismiss) onDismiss(); } } : {});
 }
 function closeModal(el) {
   el.hidden = true;
-  if (releaseModal) { releaseModal(); releaseModal = null; }
+  if (currentModalEl === el) {
+    if (releaseModal) { releaseModal(); releaseModal = null; }
+    currentModalEl = null;
+  }
 }
 
 let pub = null;       // last public state

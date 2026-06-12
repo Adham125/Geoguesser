@@ -17,16 +17,13 @@ socket.emit("validateCookie", {}, response => {
   if (response && response.success) {
     loginStatus.textContent = `Logged in: ${response.username}`;
     loginStatus.setAttribute("aria-label", "Open your profile");
+    loginStatus.onclick = () => { window.location.href = './profile.html'; };
     loginButton.style.display = "";
   } else {
     loginStatus.textContent = "Sign in";
     loginStatus.setAttribute("aria-label", "Sign in");
     loginStatus.onclick = () => { window.location.href = "../index.html"; };
   }
-});
-
-loginStatus.addEventListener("click", () => {
-  window.location.href = './profile.html';
 });
 
 loginButton.addEventListener("click", () => {
