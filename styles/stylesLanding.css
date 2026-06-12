@@ -421,112 +421,34 @@ body {
 }
 
 
-/* Ko-fi popup (main.html only). Modal overlay with dim backdrop; shows
-   ~25% of qualifying page loads with a 7-day cooldown. State persists in
-   cookies because main.js calls localStorage.clear() on load. */
-.kofi-popup-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(11, 18, 32, 0.72);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--space-4);
-  animation: kofi-fade-in 220ms var(--ease-out);
-}
-.kofi-popup-backdrop[hidden] { display: none; }
-.kofi-popup-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  max-width: 380px;
-  width: 100%;
-  padding: var(--space-6);
-  text-align: center;
-  position: relative;
-  animation: kofi-scale-in 260ms var(--ease-out);
-}
+/* Ko-fi support card (main.html only). Non-modal dismissible card that
+   slides in from the bottom-right after 30s. State persists in cookies
+   because main.js calls localStorage.clear() on load. */
 .kofi-popup-heart {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   color: var(--color-accent);
-  margin: var(--space-2) auto var(--space-3);
+  margin: 0 auto var(--space-2);
   display: block;
 }
-.kofi-popup-title {
-  font-family: var(--font-heading);
-  font-size: var(--font-size-xl);
-  margin: 0 0 var(--space-2);
-  color: var(--color-fg);
+.kofi-card {
+  position: fixed; right: var(--space-4); bottom: calc(var(--space-4) + 56px);
+  width: min(86vw, 320px); z-index: var(--z-chrome);
+  background: var(--color-surface); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  padding: var(--space-5); text-align: center;
+  transform: translateY(12px); opacity: 0;
+  transition: transform var(--dur-med) var(--ease-out), opacity var(--dur-med) var(--ease-out);
 }
-.kofi-popup-body {
-  font-size: var(--font-size-sm);
-  color: var(--color-fg-muted);
-  line-height: 1.5;
-  margin: 0 0 var(--space-5);
+.kofi-card.is-in { transform: translateY(0); opacity: 1; }
+.kofi-card[hidden] { display: none; }
+.kofi-card-close {
+  position: absolute; top: var(--space-2); right: var(--space-2);
+  background: transparent; border: none; color: var(--color-fg-muted);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm);
 }
-.kofi-popup-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.kofi-popup-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background: linear-gradient(180deg, var(--color-success) 0%, #059669 100%);
-  color: #0B1220;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-heading);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-out),
-              box-shadow var(--dur-fast) var(--ease-out);
-}
-.kofi-popup-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16, 185, 129, 0.32); }
-.kofi-popup-cta svg { width: 16px; height: 16px; }
-.kofi-popup-later {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-2);
-  color: var(--color-fg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color var(--dur-fast) var(--ease-out),
-              border-color var(--dur-fast) var(--ease-out);
-}
-.kofi-popup-later:hover,
-.kofi-popup-later:focus-visible {
-  background: var(--color-bg-alt);
-  border-color: var(--color-border-strong);
-}
-/* When there's no body paragraph (secondary popup), give the title more
-   breathing room before the action buttons. */
-.kofi-popup-title + .kofi-popup-actions { margin-top: var(--space-4); }
-@keyframes kofi-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes kofi-scale-in {
-  from { opacity: 0; transform: scale(0.94); }
-  to   { opacity: 1; transform: scale(1); }
-}
+.kofi-card-close:hover { color: var(--color-fg); background: var(--color-surface-2); }
+.kofi-card-body { font-size: var(--font-size-sm); color: var(--color-fg-muted); line-height: 1.5; margin: var(--space-2) 0 var(--space-4); }
 
 /* CTA groups (main.html solo vs multiplayer split) */
 .cta-group { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); align-items: stretch; }
