@@ -1,4 +1,6 @@
 import { serverURL as server } from "./config.js";
+import { emitWithAck, attachConnectionBanner } from "./connection.js";
+import { showToast } from "./popup.js";
 import { populateCountryDropdown } from "./countries.js";
 
 const startButton = document.getElementById("start-btn");
@@ -15,6 +17,7 @@ var gamemode = gameModeSelect.value;
 const socket = io(server, {
   withCredentials: true
 });
+attachConnectionBanner(socket);
 
 document.addEventListener('DOMContentLoaded', () => {
   //const cookie = document.cookie
@@ -106,7 +109,7 @@ startButton.addEventListener("click", function() {
 
 
 // Join Button Event Listener
-createRoomButton.addEventListener("click", function() {
+createRoomButton.addEventListener("click", async function() {
   const roundsSelect = document.getElementById('rounds');
   const gameModeSelect = document.getElementById("game-mode");
   const timer = document.getElementById("timer");
@@ -115,20 +118,35 @@ createRoomButton.addEventListener("click", function() {
   const zoomingCheck = document.getElementById("zooming")
   const countrySelect = document.getElementById("country-select");
 
-  var roomName = generateRoomCode(5)
-  localStorage.setItem("roomId", roomName)
-  localStorage.setItem("roomHost", true)
-  socket.emit('createRoom', [roomName, [gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]] )
+  const roomName = generateRoomCode(5)
+  createRoomButton.classList.add("is-pending");
+  createRoomButton.disabled = true;
+  try {
+    const res = await emitWithAck(socket, 'createRoom',
+      [roomName, [gameModeSelect.value, movingCheck.checked, zoomingCheck.checked, timer.checked, timerDropdown.value, roundsSelect.value, countrySelect.value]]);
+    if (res && res.ok) {
+      localStorage.setItem("roomId", res.code || roomName)
+      localStorage.setItem("roomHost", true)
+      window.location.href = './playerDetails.html';
+    } else {
+      showToast("Couldn't create the room. Try again.", { type: "error" });
+    }
+  } catch (e) {
+    showToast("Server isn't responding — please try again.", { type: "error" });
+  } finally {
+    createRoomButton.classList.remove("is-pending");
+    createRoomButton.disabled = false;
+  }
+});
 
-  window.location.href = './playerDetails.html';
-}); 
-
-joinRoom.addEventListener("click", function() {
-  const roomCodeInput = document.getElementById('room-code-input').value;
-  localStorage.setItem("roomId", roomCodeInput)
+document.getElementById("join-room-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const raw = document.getElementById('room-code-input').value.trim().toUpperCase();
+  if (!raw) { showToast("Enter a room code.", { type: "warning" }); return; }
+  localStorage.setItem("roomId", raw)
   localStorage.setItem("roomHost", false)
   window.location.href = './playerDetails.html';
-})
+});
 
   function generateRoomCode(length) {
     let result = '';

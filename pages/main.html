@@ -73,7 +73,7 @@
             <input type="checkbox" id="timer"/>
             Timer
           </label>
-          <div id="timer">
+          <div id="timer-dropdown-wrap">
             <select id="timerDropdown" class="timer-dropdown" style="display: none;">
               <option value="30">30 seconds</option>
               <option value="60">1 minute</option>
@@ -108,8 +108,10 @@
     </div>
 
     <div id="join-room-container" class="start-button">
-      <button id="join-room-button">Join Room</button>
-      <input type="text" id="room-code-input" placeholder="Enter room code">
+      <form id="join-room-form">
+        <button id="join-room-button" type="submit">Join Room</button>
+        <input type="text" id="room-code-input" placeholder="Enter room code">
+      </form>
     </div>
 
     <!-- Start Button -->
