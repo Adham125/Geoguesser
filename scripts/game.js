@@ -1,7 +1,8 @@
 import { pickRandomPoint } from './geojson.js';
 import { serverURL as server } from './config.js';
-import { showMessage, showConfirm } from './popup.js';
+import { showMessage, showConfirm, showToast } from './popup.js';
 import { attachConnectionBanner } from './connection.js';
+import { trapFocus } from './modal-behavior.js';
 
 const geojsonFilePath = '../geojson/world.geojson';
 var map;
@@ -46,6 +47,7 @@ var roundsMax = JSON.parse(localStorage.getItem("rounds"));
 var currentRound = 1;
 var scoresMenu = document.getElementById("scoresMenu");
 var scoresList = document.getElementById("scoresList");
+let releaseScores = null;
 
 var ongoingScore = 0;
 var distance;
@@ -188,6 +190,7 @@ socket.on("initNextRound", function() {
     initialize()
   }else{
     currentRound++;
+    renderRoundIndicator();
     confirmButton.disabled = false;
     markers = [];
     markerISOs = [];
@@ -246,6 +249,13 @@ socket.on("roundEnded", function() {
 socket.on("endOfGameResults", results => {
   populateMultiplayerScores(results)
 })
+
+function renderRoundIndicator() {
+  const el = document.getElementById("round-indicator");
+  if (!el) return;
+  const total = (typeof roundsMax === "number" && Number(roundsMax) < 99999) ? roundsMax : "∞";
+  el.textContent = `Round ${currentRound}${total === "∞" ? "" : ` of ${total}`}`;
+}
 
 async function initialize(id = null) {
   //const fenway = { lat: 42.345573, lng: -71.098326 };
@@ -317,7 +327,8 @@ async function initialize(id = null) {
     await getStreetView(id)
   }
 
-  startTime = Date.now()
+  startTime = Date.now();
+  renderRoundIndicator();
 }
 
 function placeMarker(latLng, colour = "#FF6347") {
@@ -688,8 +699,10 @@ async function populateMultiplayerScores(scores = null) {
         <svg class="trophy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="22" height="22">
           <path fill="currentColor" d="M6 3h12v2h3a1 1 0 0 1 1 1v2a5 5 0 0 1-5 5 6 6 0 0 1-4 2.91V19h3a1 1 0 0 1 1 1v1H7v-1a1 1 0 0 1 1-1h3v-3.09A6 6 0 0 1 7 13a5 5 0 0 1-5-5V6a1 1 0 0 1 1-1h3V3Zm0 4H4v1a3 3 0 0 0 2 2.83V7Zm12 0v3.83A3 3 0 0 0 20 8V7h-2Z"/>
         </svg>
-        <span>${wname} — ${(playerTotals[winnerId] || 0).toLocaleString()} pts</span>
+        <span class="winner-text"></span>
       `;
+      winnerBanner.querySelector(".winner-text").textContent =
+        `${wname} — ${(playerTotals[winnerId] || 0).toLocaleString()} pts`;
     }
   } else {
     // Singleplayer list
@@ -769,6 +782,9 @@ async function populateMultiplayerScores(scores = null) {
 
   endGameButton.style.display = "none";
 
+  scoresMenu.setAttribute("role", "dialog");
+  scoresMenu.setAttribute("aria-modal", "true");
+  releaseScores = trapFocus(scoresMenu, { onEscape: closeScoresMenu });
   scoresMenu.classList.remove("hidden");
   scoresMenu.classList.add("visible");
 }
@@ -776,6 +792,7 @@ async function populateMultiplayerScores(scores = null) {
 function nextRound() {
   hideRoundResult();
   currentRound++;
+  renderRoundIndicator();
   if (currentRound > roundsMax){         // End of Game Logic
     if(roomName === "Singleplayer"){
       populateMultiplayerScores();
@@ -887,6 +904,8 @@ async function confirmSelect(timedOut) {
       distance = null;
     }
 
+    showToast("Guess locked in — waiting for other players…", { type: "info", duration: 3000 });
+
     placeMarker(location, "flag");
     if (guessPosition) {
       polyLine = new google.maps.Polyline({
@@ -995,6 +1014,7 @@ function returnToStart() {
 function closeScoresMenu(){
   scoresMenu.classList.remove("visible");
   scoresMenu.classList.add("hidden");
+  if (releaseScores) { releaseScores(); releaseScores = null; }
 }
 
 window.initialize = async () => {
