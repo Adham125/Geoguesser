@@ -9,8 +9,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
+    padding: var(--space-6) var(--space-4);
+    box-sizing: border-box;
   }
 
   .landing-page {
