@@ -1,4 +1,5 @@
 import { serverURL as server } from "./config.js";
+import { emitWithAck, attachConnectionBanner } from "./connection.js";
 
 const nameInput = document.getElementById("name");
 const submitButton = document.getElementById("submit-button");
@@ -9,6 +10,7 @@ const roomCode = localStorage.getItem("roomId");
 const socket = io(server, {
     withCredentials: true
 });
+attachConnectionBanner(socket);
 
 var roomName = localStorage.getItem("roomId")
 
@@ -43,34 +45,53 @@ colorInput.addEventListener("input", () => {
 // Set initial color preview
 colorInput.style.backgroundColor = colorInput.value;
 
-submitButton.addEventListener("click", () => {
-    const name = nameInput.value.trim(); // Trim whitespace
+async function handleSubmit() {
+    const name = nameInput.value.trim();
     const colour = colorInput.value;
-
-    errorMessage.textContent = ""; // Clear any previous errors
+    errorMessage.textContent = "";
 
     if (name === "") {
         errorMessage.textContent = "Please enter a name.";
         return;
     }
 
-    // Store the name and color (you can use localStorage, sessionStorage, or send it to the server)
     localStorage.setItem("playerName", name);
     localStorage.setItem("playerColour", colour);
 
-    if(roomName == null){
-        socket.emit("updatePlayerDetails", {colour: colour, name: name}, (response) => {
-            if (response.success){
-                window.location.href = "hub.html";
-            }
-        })
-        
-    }else{
-        socket.emit('joinRoom', [roomCode, name, colour])
+    if (roomName == null) {
+        socket.emit("updatePlayerDetails", { colour: colour, name: name }, (response) => {
+            if (response && response.success) window.location.href = "hub.html";
+        });
+        return;
     }
-    
-    
-});
+
+    submitButton.classList.add("is-pending");
+    submitButton.disabled = true;
+    try {
+        const res = await emitWithAck(socket, "joinRoom", [roomCode, name, colour]);
+        if (res && res.ok) {
+            if (res.gameType === "catan") {
+                errorMessage.textContent = "That code is a Catan room — join it from the Catan page.";
+                submitButton.classList.remove("is-pending");
+                submitButton.disabled = false;
+                return;
+            }
+            // success → navigation is driven by the goToRoom listener.
+        } else {
+            errorMessage.textContent = res && res.error === "invalid_code"
+                ? "That room code doesn't look right."
+                : "Room not found. Check the code and try again.";
+            submitButton.classList.remove("is-pending");
+            submitButton.disabled = false;
+        }
+    } catch (e) {
+        errorMessage.textContent = "Server isn't responding — please try again.";
+        submitButton.classList.remove("is-pending");
+        submitButton.disabled = false;
+    }
+}
+
+document.getElementById("join-form").addEventListener("submit", (e) => { e.preventDefault(); handleSubmit(); });
 
 socket.on("goToRoom", (roomName, gameType) => {
     // Catan rooms have their own join flow (pages/catan/home.html).
