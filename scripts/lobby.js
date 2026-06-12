@@ -1,6 +1,7 @@
 import { serverURL as server } from "./config.js";
 import { populateCountryDropdown } from "./countries.js";
-import { showMessage } from "./popup.js";
+import { showMessage, showToast } from "./popup.js";
+import { attachConnectionBanner } from "./connection.js";
 
 const roomCodeDisplay = document.getElementById('roomCode');
 const roundsSelect = document.getElementById('rounds');
@@ -18,10 +19,18 @@ const playerList = document.getElementById("players-ul");
 const socket = io(server, {
     withCredentials: true
   });
+attachConnectionBanner(socket);
 
 var playerName = localStorage.getItem("playerName")
 var colour = localStorage.getItem("playerColour")
 var roomName = localStorage.getItem("roomId")
+
+if (!roomName || !playerName) {
+    showToast("Your room session expired — start again.", { type: "warning" });
+    setTimeout(() => { window.location.href = "./main.html"; }, 1200);
+    throw new Error("missing lobby state"); // stop module init cleanly
+}
+
 roundsSelect.value = "99999"
 
 // Server is authoritative for host identity; localStorage is only a hint
@@ -71,6 +80,15 @@ function renderPlayerList() {
         if (amHost && !isMe) {
             li.classList.add("transferable");
             li.title = `Actions for ${currentPlayers[sid].name}`;
+            li.tabIndex = 0;
+            li.setAttribute("role", "button");
+            li.setAttribute("aria-haspopup", "menu");
+            li.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openPlayerMenu(li, sid, currentPlayers[sid].name);
+                }
+            });
             li.addEventListener("click", (e) => {
                 e.stopPropagation();
                 openPlayerMenu(li, sid, currentPlayers[sid].name);
@@ -160,6 +178,7 @@ socket.on("hostChanged", ({ hostId }) => {
     const amHost = hostId === socket.id;
     localStorage.setItem("roomHost", amHost ? "true" : "false");
     startButton.disabled = !amHost;
+    showToast(amHost ? "You are now the host." : "Host changed.", { type: "info", duration: 2500 });
     renderPlayerList();
 });
 
