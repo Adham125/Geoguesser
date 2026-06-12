@@ -6,7 +6,7 @@
 //   3. Password (requires current password)
 
 import { serverURL as server } from './config.js';
-import { showMessage, showToast } from './popup.js';
+import { showMessage, showToast, showConfirm } from './popup.js';
 
 const displayUsernameInput   = document.getElementById('display-username');
 const displayColourInput     = document.getElementById('display-colour-input');
@@ -112,6 +112,29 @@ passwordChangeButton.addEventListener('click', () => {
         }
     });
 });
+
+// ---- Delete account (permanent, confirmation-gated) ----
+const deleteAccountButton = document.getElementById('delete-account-btn');
+if (deleteAccountButton) {
+    deleteAccountButton.addEventListener('click', async () => {
+        const ok = await showConfirm(
+            "This permanently deletes your account and all your stats. This can't be undone.",
+            { title: "Delete account?", okText: "Delete account", cancelText: "Cancel", danger: true }
+        );
+        if (!ok) return;
+        deleteAccountButton.classList.add('is-pending');
+        deleteAccountButton.disabled = true;
+        socket.emit('deleteAccount', {}, (response) => {
+            if (response && response.success) {
+                window.location.href = '../index.html';
+            } else {
+                showToast(response?.message || "Couldn't delete your account. Try again.", { type: "error" });
+                deleteAccountButton.classList.remove('is-pending');
+                deleteAccountButton.disabled = false;
+            }
+        });
+    });
+}
 
 // ---- Stats map ----
 var map = L.map('map').setView([20, 0], 2);
