@@ -535,7 +535,7 @@ function describeLogEntry(e) {
     case "setupGrant": return null;
     case "setupComplete": return "Setup complete — game on!";
     case "build": return `<b>${escapeHtml(seatName(e.seat))}</b> built a ${e.kind}`;
-    case "bankTrade": return `<b>${escapeHtml(seatName(e.seat))}</b> traded 4 ${RESOURCE_ICONS[e.give]} → 1 ${RESOURCE_ICONS[e.receive]}`;
+    case "bankTrade": return `<b>${escapeHtml(seatName(e.seat))}</b> traded ${e.rate} ${RESOURCE_ICONS[e.give]} → 1 ${RESOURCE_ICONS[e.receive]}`;
     case "discard": return `<b>${escapeHtml(seatName(e.seat))}</b> discarded ${e.count} cards`;
     case "discardPhase": return "Over 7 cards — discard time!";
     case "robberPhase": return null;
