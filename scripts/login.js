@@ -82,6 +82,89 @@ signUpButton.addEventListener('click', (event) => {
 });
 
 
+// ----- Forgot-password flow: login form <-> step 1 (email) <-> step 2 (code) --
+const forgotLink = document.getElementById('forgot-link');
+const forgotStep1 = document.getElementById('forgot-step1');
+const forgotStep2 = document.getElementById('forgot-step2');
+const forgotEmail = document.getElementById('forgot-email');
+const sendCodeButton = document.getElementById('send-code');
+const resetButton = document.getElementById('do-reset');
+
+function showLoginView() {
+    authForm.style.display = '';
+    forgotLink.style.display = '';
+    forgotStep1.style.display = 'none';
+    forgotStep2.style.display = 'none';
+}
+
+forgotLink.addEventListener('click', () => {
+    forgotEmail.value = usernameButton.value; // carry over anything typed
+    authForm.style.display = 'none';
+    forgotLink.style.display = 'none';
+    forgotStep1.style.display = '';
+});
+
+for (const btn of document.querySelectorAll('.back-to-login')) {
+    btn.addEventListener('click', showLoginView);
+}
+
+forgotStep1.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    sendCodeButton.classList.add('is-pending');
+    sendCodeButton.disabled = true;
+    try {
+        const response = await fetch(`${server}/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: forgotEmail.value })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+            showMessage(data.message, { title: "Check your email" });
+            forgotStep1.style.display = 'none';
+            forgotStep2.style.display = '';
+        } else {
+            showMessage(data.message || "Couldn't send a reset code. Try again later.", { title: "Password reset" });
+        }
+    } catch (e) {
+        showMessage("Couldn't reach the server. Check your connection and try again.", { title: "Connection error" });
+    } finally {
+        sendCodeButton.classList.remove('is-pending');
+        sendCodeButton.disabled = false;
+    }
+});
+
+forgotStep2.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    resetButton.classList.add('is-pending');
+    resetButton.disabled = true;
+    try {
+        const response = await fetch(`${server}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: forgotEmail.value,
+                code: document.getElementById('reset-code').value,
+                newPassword: document.getElementById('new-password').value
+            })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+            showMessage("Password updated — please log in.", { title: "Password reset" });
+            usernameButton.value = forgotEmail.value;
+            passwordButton.value = '';
+            showLoginView();
+        } else {
+            showMessage(data.message || "Invalid or expired code.", { title: "Password reset" });
+        }
+    } catch (e) {
+        showMessage("Couldn't reach the server. Check your connection and try again.", { title: "Connection error" });
+    } finally {
+        resetButton.classList.remove('is-pending');
+        resetButton.disabled = false;
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     socket.emit("validateCookie", {}, response => {
         if (response && response.success) {

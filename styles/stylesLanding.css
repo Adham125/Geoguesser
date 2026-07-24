@@ -154,7 +154,24 @@ body {
   .start-button {
     margin-top: 20px;
   }
-  
+
+/* Text-link buttons for the forgot-password flow */
+.link-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 14px;
+  color: var(--color-fg-muted, #9AA3B5);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover {
+  color: var(--color-fg, #E6EAF2);
+}
+
   .settings button {
     margin-bottom: 10px;
   }

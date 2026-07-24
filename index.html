@@ -48,6 +48,29 @@
       </div>
     </form>
 
+    <button id="forgot-link" type="button" class="link-btn">Forgot password?</button>
+
+    <form id="forgot-step1" style="display:none">
+      <div>
+        <input autocomplete="email" type="email" id="forgot-email" placeholder="Enter Email">
+      </div>
+      <div class="start-button">
+        <button id="send-code" type="submit" class="btn btn--primary">Send code</button>
+      </div>
+      <button type="button" class="link-btn back-to-login">Back to login</button>
+    </form>
+
+    <form id="forgot-step2" style="display:none">
+      <div>
+        <input type="text" id="reset-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
+        <input type="password" id="new-password" autocomplete="new-password" placeholder="New password">
+      </div>
+      <div class="start-button">
+        <button id="do-reset" type="submit" class="btn btn--primary">Reset password</button>
+      </div>
+      <button type="button" class="link-btn back-to-login">Back to login</button>
+    </form>
+
   </div>
   <script type="module" src="./scripts/login.js"></script>
 </body>
