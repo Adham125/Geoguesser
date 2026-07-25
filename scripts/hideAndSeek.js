@@ -236,10 +236,14 @@ socket.on("hsCountdown", ({ secondsLeft, cancelled }) => {
   countdownNumber.style.animation = "";
 });
 
-socket.on("hsRoundStart", (data) => {
+socket.on("hsRoundStart", handleHSRoundStart);
+
+// Named so applyHSSnapshot (rejoin resume) can hand a snapshot's roundStart
+// straight through this exact path instead of duplicating it.
+function handleHSRoundStart(data) {
   if (data.players) roomPlayers = data.players;
   startSeekRound(data);
-});
+}
 
 socket.on("hsLiveViewUpdate", ({ seekerId, panoId, heading, pitch, zoom }) => {
   liveViews[seekerId] = { panoId, heading, pitch, zoom };
@@ -500,14 +504,18 @@ function enterSeekPhase() {
   renderRoster();
 }
 
-// Resume from a rejoinGame ack. Drives the same enterHidePhase/enterSeekPhase
+// Resume from a rejoinGame ack. Drives the same enterHidePhase / resetTimer
 // handlers the live hsPhaseChange/hsRoundStart events use, rather than
-// duplicating their bodies, then layers the round-specific bits the snapshot
-// carries on top. The snapshot is deliberately sparse (no pano/owner —
-// hsSnapshot only reports phase, round, timer and this player's own guessed
-// state), so a resume into "seek"/"reveal" gets the correct chrome and score
-// board but waits for the next hsRoundStart/hsRoundReveal to show the round's
-// actual spot; there's no way to reconstruct that from this payload alone.
+// duplicating their bodies. When a seek round is actually in progress the
+// snapshot's roundStart carries the exact same shape the live hsRoundStart
+// event does (pano/owner/role included), so it's handed straight to
+// handleHSRoundStart — the round renders through the identical path a live
+// round takes, with no parallel rendering logic to drift.
+//
+// A resume mid-"reveal" (or a "seek" snapshot missing roundStart, e.g. its
+// owner already left) doesn't carry enough to redraw a reveal card or a
+// round's pano, so it falls back to the generic seek chrome and waits for
+// the next server event.
 function applyHSSnapshot(snap) {
   if (!snap) return;
   // Maps hasn't finished loading (map/mainStreetView don't exist yet) —
@@ -521,22 +529,38 @@ function applyHSSnapshot(snap) {
   if (snap.phase === "hide") {
     enterHidePhase();
     if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    updateFloatingPanelForPhase();
+    renderRoster();
+    return;
+  }
+
+  if (snap.roundStart) {
+    // myHidingSpot must be set BEFORE handing off — resolveOwnershipAsOwner
+    // (called synchronously inside startSeekRound, if roundStart.ownerId is
+    // us) reads it to drop the hider's own flag marker.
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    handleHSRoundStart(snap.roundStart);
   } else {
-    // "seek" and "reveal" both resume into the seek chrome.
     enterSeekPhase();
     if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
-    if (snap.youGuessed) {
-      myGuessLocked = true;
-      guessLockedThisRound.add(socket.id);
-    }
     // Mirrors startSeekRound's own display toggle — without it a no-timer
     // room's stale "00:00" placeholder would stay visible on resume.
     timer.style.display = snap.msLeft != null ? "block" : "none";
-    if (snap.msLeft != null) {
-      roundTimerSec = Math.round(snap.msLeft / 1000);
-      resetTimer();
-    }
   }
+
+  if (snap.youGuessed) {
+    myGuessLocked = true;
+    guessLockedThisRound.add(socket.id);
+  }
+  // snap.msLeft is the TRUE remaining time; roundStart.timerSeconds (if we
+  // took that branch) is only the round's full configured duration — this
+  // corrects the countdown to what's actually left, milliseconds → the
+  // existing timer helper's seconds.
+  if (snap.msLeft != null) {
+    roundTimerSec = Math.round(snap.msLeft / 1000);
+    resetTimer();
+  }
+
   updateFloatingPanelForPhase();
   renderRoster();
 }
