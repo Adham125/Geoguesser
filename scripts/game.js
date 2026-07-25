@@ -385,6 +385,15 @@ async function initialize(id = null) {
   
 
   nextButton.disabled = true;
+  // A refresh can land after the round already ended (reachable whenever the
+  // host guesses last): roundEnded is a one-shot broadcast the refresh
+  // missed, and nothing else would ever re-enable Next for the host. The
+  // server's rejoinGame ack carries roundComplete precisely so this resumed
+  // state can be restored — mirrors the roundEnded handler's own button
+  // logic below rather than inventing new state.
+  if (hosting && resumedRound && resumedRound.roundComplete) {
+    nextButton.disabled = false;
+  }
 
   if (roomName === "Singleplayer"){         // <----------------- Singleplayer
     await getStreetView ()
