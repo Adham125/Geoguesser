@@ -512,10 +512,13 @@ function enterSeekPhase() {
 // handleHSRoundStart — the round renders through the identical path a live
 // round takes, with no parallel rendering logic to drift.
 //
-// A resume mid-"reveal" (or a "seek" snapshot missing roundStart, e.g. its
-// owner already left) doesn't carry enough to redraw a reveal card or a
-// round's pano, so it falls back to the generic seek chrome and waits for
-// the next server event.
+// A resume mid-"reveal" doesn't carry enough to redraw a reveal card, and
+// must NOT call enterSeekPhase() as a stand-in — that sets phase = "seek"
+// internally, overwriting the "reveal" this function's caller just set, and
+// arms the map-click guess handler for a round that's no longer accepting
+// guesses (the server silently drops hsSubmitGuess outside "seek", so that
+// would be a live-looking but dead control). It deliberately does nothing
+// more than restore the spot/roster/score state already set above.
 function applyHSSnapshot(snap) {
   if (!snap) return;
   // Maps hasn't finished loading (map/mainStreetView don't exist yet) —
@@ -534,6 +537,16 @@ function applyHSSnapshot(snap) {
     return;
   }
 
+  if (snap.phase !== "seek") {
+    // "reveal" (hsSnapshot never actually reports "final" — see rooms.js's
+    // finished-game wipe). See the function comment above for why this
+    // stops here instead of falling into the seek chrome.
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    updateFloatingPanelForPhase();
+    renderRoster();
+    return;
+  }
+
   if (snap.roundStart) {
     // myHidingSpot must be set BEFORE handing off — resolveOwnershipAsOwner
     // (called synchronously inside startSeekRound, if roundStart.ownerId is
@@ -541,6 +554,8 @@ function applyHSSnapshot(snap) {
     if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
     handleHSRoundStart(snap.roundStart);
   } else {
+    // A live seek round whose owner already left (their lock was deleted) —
+    // still genuinely "seek", just missing round-specific data.
     enterSeekPhase();
     if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
     // Mirrors startSeekRound's own display toggle — without it a no-timer
@@ -555,7 +570,10 @@ function applyHSSnapshot(snap) {
   // snap.msLeft is the TRUE remaining time; roundStart.timerSeconds (if we
   // took that branch) is only the round's full configured duration — this
   // corrects the countdown to what's actually left, milliseconds → the
-  // existing timer helper's seconds.
+  // existing timer helper's seconds. Gated on phase === "seek" (we're
+  // already inside that branch here) since during a reveal msLeft is
+  // derived from a stale-but-non-zero roundStartedAt and would otherwise
+  // start a countdown on a screen that isn't a seek round.
   if (snap.msLeft != null) {
     roundTimerSec = Math.round(snap.msLeft / 1000);
     resetTimer();
