@@ -146,6 +146,7 @@ function soundForEvent(e) {
     case "discard": return "discard";
     case "production":
       return mySeat !== null && e.gains[mySeat] && Object.keys(e.gains[mySeat]).length ? "gain" : null;
+    case "setupGrant": return e.seat === mySeat ? "gain" : null;
     case "longestRoad":
     case "largestArmy": return e.seat === null ? null : "award";
     case "gameOver": return e.seat === mySeat ? "winMe" : "winOther";
@@ -276,11 +277,13 @@ function connect() {
       }
       mySeat = res.seat;
       // A rejoin is a full resync, not a continuation: drop the delta baseline,
-      // the sound cursor, and the turn-cue cursor so we don't replay what
-      // happened while away.
+      // the sound cursor, the turn-cue cursor, the board's piece-diff state,
+      // and any queued banners so we don't replay what happened while away.
       mine = null;
       soundSeq = null;
       lastSeenSeat = null;
+      if (renderer) renderer.resetDiff();
+      bannerQueue.length = 0;
       applyState(res.state, res.hand);
     });
   };
@@ -317,8 +320,11 @@ function applyState(newPub, newMine) {
   }
   if (!pub) return;
 
-  if (newPub) { processLogEvents(); checkTurnCue(); }
-  if (newPub) renderer.render(pub);
+  if (newPub) {
+    processLogEvents();
+    checkTurnCue();
+    renderer.render(pub);
+  }
   renderPlayers();
   renderDice();
   renderBank();
@@ -624,7 +630,7 @@ function animateDiceRoll() {
     renderDice();
     els.dicePair.classList.add("settled");
     setTimeout(() => els.dicePair.classList.remove("settled"), 320);
-  }, 420);
+  }, 250);
 }
 
 // Deltas since the previous hand snapshot; consumed on render so pub-only

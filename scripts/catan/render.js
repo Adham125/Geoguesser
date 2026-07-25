@@ -270,6 +270,9 @@ export function createRenderer(svg, board, opts = {}) {
     zoomIn() { panZoom && panZoom.zoomBy(1 / 1.25); },
     zoomOut() { panZoom && panZoom.zoomBy(1.25); },
     resetView() { panZoom && panZoom.reset(); },
+    // A resync (socket reconnect) is not a continuation: draw the next frame
+    // as a first render so pieces built while away don't all animate in.
+    resetDiff() { firstRender = true; },
   };
 }
 

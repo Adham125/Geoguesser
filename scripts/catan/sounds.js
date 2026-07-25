@@ -54,7 +54,12 @@ function ensureCtx() {
     ctx = new AC();
     master = ctx.createGain();
     master.gain.value = muted ? 0 : MASTER_GAIN;
-    master.connect(ctx.destination);
+    // A batched commit can start several one-shots at the same currentTime
+    // (e.g. a Knight that also takes Largest Army); a compressor keeps their
+    // sum from exceeding 1.0 and hard-clipping.
+    const compressor = ctx.createDynamicsCompressor();
+    master.connect(compressor);
+    compressor.connect(ctx.destination);
     for (const name in raw) decodeOne(name);
   }
   if (ctx.state === "suspended") ctx.resume();

@@ -683,7 +683,7 @@ body.catan :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .building.piece-new, .road.piece-new, .road-outline.piece-new,
-  .card.bump, .event-banner.show { animation: none; }
+  .card.bump, .event-banner.show, .dice-pair.shaking { animation: none; }
   .robber { transition: none; }
   .event-banner.show { opacity: 1; }
   /* dash attrs would otherwise leave un-animated new roads invisible */
