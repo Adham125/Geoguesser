@@ -105,8 +105,20 @@ if (hosting && roomName != "Singleplayer") {
 
 // Resolves once the server has told us where we are. initialize() waits on
 // this so a refresh restores the round in progress instead of starting one.
+// Timed out so an unreachable server degrades to a normal fresh load rather
+// than leaving the page blank forever.
 let resumeReady;
-const resumed = new Promise(res => { resumeReady = res; });
+const resumed = new Promise(res => {
+  resumeReady = res;
+  setTimeout(() => res(null), 5000);
+});
+// `resumed` only ever answers "what was in progress when THIS page load
+// started" — it settles once and keeps that answer forever. initialize()
+// is called again with id=null on every later round transition (see
+// initNextRound's host branch), so it must only consult `resumed` on the
+// very first call; otherwise round 2+ would keep replaying the resumed
+// round's stale pano instead of rolling a fresh one.
+let resumeConsulted = false;
 
 socket.emit("rejoinGame", {
   roomCode: roomName,
@@ -289,9 +301,11 @@ async function initialize(id = null) {
   // Ask the server what round we're in first: if one is already running we
   // load ITS pano, instead of a host silently re-rolling the round or a
   // non-host loading nothing at all.
-  if (id === null && roomName !== "Singleplayer") {
-    const round = await resumed;
-    if (round && round.panoId) id = round.panoId;
+  let resumedRound = null;
+  if (id === null && roomName !== "Singleplayer" && !resumeConsulted) {
+    resumeConsulted = true;
+    resumedRound = await resumed;
+    if (resumedRound && resumedRound.panoId) id = resumedRound.panoId;
   }
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
@@ -352,7 +366,7 @@ async function initialize(id = null) {
   if (roomName === "Singleplayer"){         // <----------------- Singleplayer
     await getStreetView ()
   }else{                  // <------------------- Multiplayer
-    if (hosting){     // Host actions
+    if (hosting && !resumedRound){     // Host actions — skip re-rolling a round we already resumed
       await getStreetView()
       socket.emit("initialize", [roomName, location, polygon, streetViewId, locationISO])
     }
