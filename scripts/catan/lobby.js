@@ -179,7 +179,10 @@ nameInput.addEventListener("keydown", e => {
 
 function renderRoster() {
   roster.innerHTML = "";
-  const ids = Object.keys(players);
+  // Skip held disconnected slots (the geo grace hold has its own server-side
+  // fix now, but a held row reaching this render by another path must not
+  // show a ghost player either — same filter Geoguesser's lobby.js applies).
+  const ids = Object.keys(players).filter(id => players[id].connected !== false);
   for (const id of ids) {
     const p = players[id];
     const row = document.createElement("div");

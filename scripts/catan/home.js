@@ -13,6 +13,23 @@ const errorMessage = document.getElementById("error-message");
 const socket = io(server, { withCredentials: true });
 attachConnectionBanner(socket);
 
+// Offer a way back into a live game if this account still holds a seat —
+// covers losing the local pointer (e.g. localStorage cleared by the landing
+// page). Guests get nothing back; the button simply stays hidden.
+socket.emit("catan:findMyGame", {}, res => {
+  if (!res || !res.ok || !res.game) return;
+  const card = document.getElementById("rejoin-card");
+  const text = document.getElementById("rejoin-text");
+  // textContent: the room code is server-supplied but this stays consistent
+  // with the project's no-innerHTML-for-dynamic-values rule.
+  text.textContent = `Room ${res.game.roomCode} · ${res.game.playerCount} players`;
+  document.getElementById("rejoin-btn").addEventListener("click", () => {
+    localStorage.setItem("catanRoomId", res.game.roomCode);
+    window.location.href = "./game.html";
+  });
+  card.hidden = false;
+});
+
 // Same charset as the Geoguesser room codes (scripts/main.js).
 function generateRoomCode(length) {
   let result = "";

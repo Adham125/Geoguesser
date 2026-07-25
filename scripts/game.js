@@ -44,7 +44,7 @@ nextButton.addEventListener("click", nextRound);
 
 
 var roundsMax = JSON.parse(localStorage.getItem("rounds"));
-var currentRound = 1;
+var currentRound = 1; // overwritten by the rejoinGame ack when a round is already in progress
 var scoresMenu = document.getElementById("scoresMenu");
 var scoresList = document.getElementById("scoresList");
 let releaseScores = null;
@@ -103,7 +103,59 @@ if (hosting && roomName != "Singleplayer") {
   endGameButton.style.display = "inline-block";
 }
 
-socket.emit("joinedGame", [roomName, playerName, playerColour])
+// Resolves once the server has told us where we are. initialize() waits on
+// this so a refresh restores the round in progress instead of starting one.
+// Timed out so an unreachable server degrades to a normal fresh load rather
+// than leaving the page blank forever.
+let resumeReady;
+const resumed = new Promise(res => {
+  resumeReady = res;
+  setTimeout(() => res(null), 5000);
+});
+// `resumed` only ever answers "what was in progress when THIS page load
+// started" — it settles once and keeps that answer forever. initialize()
+// is called again with id=null on every later round transition (see
+// initNextRound's host branch), so it must only consult `resumed` on the
+// very first call; otherwise round 2+ would keep replaying the resumed
+// round's stale pano instead of rolling a fresh one.
+let resumeConsulted = false;
+
+// Re-emitted on every "connect" (initial load AND every auto-reconnect after
+// a transport drop) — a reconnect gets a new socket id, so without this the
+// new socket never re-joins the room server-side and the held slot silently
+// expires after GEO_GRACE_MS while the tab still looks connected.
+socket.on("connect", () => {
+  socket.emit("rejoinGame", {
+    roomCode: roomName,
+    playerToken: localStorage.getItem("geoPlayerToken"),
+    name: playerName,
+    colour: playerColour,
+  }, res => {
+    if (!res || !res.ok) { resumeReady(null); return; }
+    localStorage.setItem("geoPlayerToken", res.playerToken);
+    if (res.scores) {
+      for (const sid in res.scores) {
+        if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = res.scores[sid];
+      }
+    }
+    if (res.round) {
+      currentRound = res.round.index;
+      if (res.round.youGuessed) {
+        // Mirror confirmSelect's post-guess chrome so a refresh after guessing
+        // doesn't leave the timer running or the map/pano at their pre-guess
+        // layout (initNextRound's toggle would then flip them the wrong way).
+        confirmButton.disabled = true;
+        mapcss.classList.add("swapped");
+        panocss.classList.add("swapped");
+        clearInterval(timerInterval);
+        timer.style.display = 'none';
+      } else if (res.round.msLeft !== null) {
+        resetTimer(Math.ceil(res.round.msLeft / 1000));
+      }
+    }
+    resumeReady(res.round);
+  });
+});
 
 socket.on("playerJoined", players => { // vars = players {name, colour}
   lastPlayers = players || {};
@@ -149,6 +201,16 @@ socket.on("playerLeft", ({ socketId, players }) => {
   const row = ongoingScoreElement.querySelector(`.score-div[data-sid="${socketId}"]`);
   if (row) row.remove();
   delete playerScoreMap[socketId];
+});
+
+// rejoinGame's playerJoined broadcast rebuilds every row at "0" for everyone
+// else in the room — this restores the running totals the same way the
+// rejoinGame ack does for the refreshing client itself.
+socket.on("scoresUpdate", scores => {
+  if (!scores) return;
+  for (const sid in scores) {
+    if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = scores[sid];
+  }
 });
 
 socket.on("hostChanged", ({ hostId }) => {
@@ -258,6 +320,16 @@ function renderRoundIndicator() {
 }
 
 async function initialize(id = null) {
+  // On a page load (including a refresh) the Maps callback fires with no id.
+  // Ask the server what round we're in first: if one is already running we
+  // load ITS pano, instead of a host silently re-rolling the round or a
+  // non-host loading nothing at all.
+  let resumedRound = null;
+  if (id === null && roomName !== "Singleplayer" && !resumeConsulted) {
+    resumeConsulted = true;
+    resumedRound = await resumed;
+    if (resumedRound && resumedRound.panoId) id = resumedRound.panoId;
+  }
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
@@ -313,11 +385,20 @@ async function initialize(id = null) {
   
 
   nextButton.disabled = true;
+  // A refresh can land after the round already ended (reachable whenever the
+  // host guesses last): roundEnded is a one-shot broadcast the refresh
+  // missed, and nothing else would ever re-enable Next for the host. The
+  // server's rejoinGame ack carries roundComplete precisely so this resumed
+  // state can be restored — mirrors the roundEnded handler's own button
+  // logic below rather than inventing new state.
+  if (hosting && resumedRound && resumedRound.roundComplete) {
+    nextButton.disabled = false;
+  }
 
   if (roomName === "Singleplayer"){         // <----------------- Singleplayer
     await getStreetView ()
   }else{                  // <------------------- Multiplayer
-    if (hosting){     // Host actions
+    if (hosting && !resumedRound){     // Host actions — skip re-rolling a round we already resumed
       await getStreetView()
       socket.emit("initialize", [roomName, location, polygon, streetViewId, locationISO])
     }
@@ -388,8 +469,9 @@ function updateTimer() {
   timer.classList.toggle("warning", totalSeconds > 10 && totalSeconds <= 30);
 }
 
-function resetTimer () {
-  totalSeconds = JSON.parse(localStorage.getItem("timer"))
+function resetTimer (seconds = JSON.parse(localStorage.getItem("timer"))) {
+  clearInterval(timerInterval);
+  totalSeconds = seconds
   timerInterval = setInterval(updateTimer, 1000);
   timer.classList.remove("warning", "critical");
   timer.style.display = 'block';

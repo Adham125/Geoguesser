@@ -54,6 +54,23 @@
   padding: 13px 22px;
 }
 
+.rejoin-card {
+  background: var(--c-panel);
+  border: 2px solid var(--c-accent);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-piece);
+  text-align: center;
+}
+.rejoin-card[hidden] { display: none; }
+.rejoin-text {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 8px;
+}
+
 /* Prominent, copyable room code at the top of the lobby card. */
 .room-code-banner {
   display: flex;

@@ -59,6 +59,12 @@ function renderPlayerList() {
     playerList.innerHTML = "";
     const amHost = currentHostId && currentHostId === socket.id;
     for (const sid in currentPlayers) {
+        // Held disconnected slots (60s grace) survive in room.players so a
+        // refresh resumes cleanly, but the lobby's own joinedRoom join isn't
+        // token-aware — game -> lobby navigation leaves the old held row
+        // alongside a brand-new one for the same returning player. Skip the
+        // held row so the lobby doesn't show a ghost duplicate.
+        if (currentPlayers[sid].connected === false) continue;
         const li = document.createElement("li");
         const isHost = sid === currentHostId;
         const isMe = sid === socket.id;

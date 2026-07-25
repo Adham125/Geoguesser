@@ -61,7 +61,9 @@ const playerName   = localStorage.getItem("playerName");
 const playerColour = localStorage.getItem("playerColour");
 
 // ---- Client state machine ----
-let phase = "hide";                 // hide | seek | reveal | final
+// Set from the rejoinGame ack — never assume "hide", or a refreshing player
+// mid-seek sees the wrong screen.
+let phase = null;                   // hide | seek | reveal | final
 let lastRevealPayload = null;       // cached so hostChanged can re-render reveal controls
 let roomPlayers = {};               // { sid: { name, colour } } — kept in sync from hsRoster / hsRoundStart
 let readySet = new Set();           // who's locked in, during HIDE
@@ -143,9 +145,30 @@ if (!roomName) {
   window.location.href = "./main.html";
 }
 
-socket.emit("joinedGame", [roomName, playerName, playerColour]);
+// Re-emitted on every "connect" (initial load AND every auto-reconnect after
+// a transport drop) — a reconnect gets a new socket id, so without this the
+// new socket never re-joins the room server-side and the held slot silently
+// expires after GEO_GRACE_MS while the tab still looks connected. Repeating
+// this on reconnect just re-applies the current server state through the
+// same applyHSSnapshot path a first-load resume already uses, which is safe
+// to re-run (see applyHSSnapshot's own comments on re-entry).
+socket.on("connect", () => {
+  socket.emit("rejoinGame", {
+    roomCode: roomName,
+    playerToken: localStorage.getItem("geoPlayerToken"),
+    name: playerName,
+    colour: playerColour,
+  }, res => {
+    if (!res || !res.ok) return;
+    localStorage.setItem("geoPlayerToken", res.playerToken);
+    if (res.hs) {
+      phase = res.hs.phase;
+      applyHSSnapshot(res.hs);
+    }
+  });
+});
 
-// Room settings snapshot (sent from server on joinedGame + on each lobby
+// Room settings snapshot (sent from server on rejoinGame + on each lobby
 // update). Index 8 is the H&S "allow photospheres" toggle — we enforce it
 // client-side on both the pegman resolution and the Lock In button.
 socket.on("roomOptionsUpdate", (options) => {
@@ -222,10 +245,14 @@ socket.on("hsCountdown", ({ secondsLeft, cancelled }) => {
   countdownNumber.style.animation = "";
 });
 
-socket.on("hsRoundStart", (data) => {
+socket.on("hsRoundStart", handleHSRoundStart);
+
+// Named so applyHSSnapshot (rejoin resume) can hand a snapshot's roundStart
+// straight through this exact path instead of duplicating it.
+function handleHSRoundStart(data) {
   if (data.players) roomPlayers = data.players;
   startSeekRound(data);
-});
+}
 
 socket.on("hsLiveViewUpdate", ({ seekerId, panoId, heading, pitch, zoom }) => {
   liveViews[seekerId] = { panoId, heading, pitch, zoom };
@@ -264,13 +291,28 @@ socket.on("hsGameOver", (payload) => {
 // Phase entry / exit
 // =====================================================================
 
+// The rejoinGame ack travels over the socket that's already open, so it
+// typically resolves before the Maps script (loaded separately, in parallel)
+// finishes. A snapshot that arrives first is stashed here and applied once
+// hsInit has built the map — otherwise hsInit's default "hide" below would
+// stomp over whatever phase the ack just resumed.
+let mapsReady = false;
+let pendingHSSnapshot = null;
+
 window.hsInit = function hsInit() {
   // Google Maps has loaded. Build the map full-screen for HIDE phase.
-  phase = "hide";
-  renderPhaseBanner();
-  renderRoster();
+  mapsReady = true;
   buildHideMap();
-  updateFloatingPanelForPhase();
+  if (pendingHSSnapshot) {
+    const snap = pendingHSSnapshot;
+    pendingHSSnapshot = null;
+    applyHSSnapshot(snap);
+  } else {
+    phase = "hide";
+    renderPhaseBanner();
+    renderRoster();
+    updateFloatingPanelForPhase();
+  }
 };
 
 function buildHideMap() {
@@ -468,6 +510,85 @@ function enterSeekPhase() {
     });
   }
   google.maps.event.trigger(map, "resize");
+  renderRoster();
+}
+
+// Resume from a rejoinGame ack. Drives the same enterHidePhase / resetTimer
+// handlers the live hsPhaseChange/hsRoundStart events use, rather than
+// duplicating their bodies. When a seek round is actually in progress the
+// snapshot's roundStart carries the exact same shape the live hsRoundStart
+// event does (pano/owner/role included), so it's handed straight to
+// handleHSRoundStart — the round renders through the identical path a live
+// round takes, with no parallel rendering logic to drift.
+//
+// A resume mid-"reveal" doesn't carry enough to redraw a reveal card, and
+// must NOT call enterSeekPhase() as a stand-in — that sets phase = "seek"
+// internally, overwriting the "reveal" this function's caller just set, and
+// arms the map-click guess handler for a round that's no longer accepting
+// guesses (the server silently drops hsSubmitGuess outside "seek", so that
+// would be a live-looking but dead control). It deliberately does nothing
+// more than restore the spot/roster/score state already set above.
+function applyHSSnapshot(snap) {
+  if (!snap) return;
+  // Maps hasn't finished loading (map/mainStreetView don't exist yet) —
+  // hsInit() replays this once it has.
+  if (!mapsReady) { pendingHSSnapshot = snap; return; }
+
+  displayRound = Number.isFinite(snap.currentRound) ? snap.currentRound : 0;
+  currentHiderIdx = Number.isFinite(snap.hiderIdx) ? snap.hiderIdx : 0;
+  scoreSnapshot = snap.scores || {};
+
+  if (snap.phase === "hide") {
+    enterHidePhase();
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    updateFloatingPanelForPhase();
+    renderRoster();
+    return;
+  }
+
+  if (snap.phase !== "seek") {
+    // "reveal" (hsSnapshot never actually reports "final" — see rooms.js's
+    // finished-game wipe). See the function comment above for why this
+    // stops here instead of falling into the seek chrome.
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    updateFloatingPanelForPhase();
+    renderRoster();
+    return;
+  }
+
+  if (snap.roundStart) {
+    // myHidingSpot must be set BEFORE handing off — resolveOwnershipAsOwner
+    // (called synchronously inside startSeekRound, if roundStart.ownerId is
+    // us) reads it to drop the hider's own flag marker.
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    handleHSRoundStart(snap.roundStart);
+  } else {
+    // A live seek round whose owner already left (their lock was deleted) —
+    // still genuinely "seek", just missing round-specific data.
+    enterSeekPhase();
+    if (snap.yourLockedSpot) myHidingSpot = snap.yourLockedSpot;
+    // Mirrors startSeekRound's own display toggle — without it a no-timer
+    // room's stale "00:00" placeholder would stay visible on resume.
+    timer.style.display = snap.msLeft != null ? "block" : "none";
+  }
+
+  if (snap.youGuessed) {
+    myGuessLocked = true;
+    guessLockedThisRound.add(socket.id);
+  }
+  // snap.msLeft is the TRUE remaining time; roundStart.timerSeconds (if we
+  // took that branch) is only the round's full configured duration — this
+  // corrects the countdown to what's actually left, milliseconds → the
+  // existing timer helper's seconds. Gated on phase === "seek" (we're
+  // already inside that branch here) since during a reveal msLeft is
+  // derived from a stale-but-non-zero roundStartedAt and would otherwise
+  // start a countdown on a screen that isn't a seek round.
+  if (snap.msLeft != null) {
+    roundTimerSec = Math.round(snap.msLeft / 1000);
+    resetTimer();
+  }
+
+  updateFloatingPanelForPhase();
   renderRoster();
 }
 
