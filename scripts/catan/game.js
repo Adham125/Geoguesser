@@ -9,7 +9,7 @@
 
 import { serverURL as server } from "../config.js";
 import { createRenderer } from "./render.js";
-import { playSound } from "./sounds.js";
+import { playSound, isMuted, setMuted } from "./sounds.js";
 import { trapFocus } from "../modal-behavior.js";
 import { attachConnectionBanner } from "../connection.js";
 
@@ -29,6 +29,7 @@ const els = {
   turnBanner: $("turn-banner"),
   roomChip: $("room-chip"),
   statusStrip: $("status-strip"),
+  eventBanner: $("event-banner"),
   board: $("board"),
   zoomIn: $("zoom-in"),
   zoomOut: $("zoom-out"),
@@ -40,6 +41,7 @@ const els = {
   dicePair: $("dice-pair"),
   diceHint: $("dice-hint"),
   turnTimer: $("turn-timer"),
+  soundToggle: $("sound-toggle"),
   bankRow: $("bank-row"),
   log: $("log"),
   hand: $("hand"),
@@ -120,22 +122,58 @@ let soundSeq = null;         // last log seq we've played sounds for
 let timerTick = null;        // interval id for the turn-timer countdown
 let dismissedTradeKey = null; // signature of the last incoming offer we declined
 
+const REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let prevHand = null;      // hand before the latest catan:hand, for delta chips
+let diceAnimating = false;
+let lastSeenSeat = null;  // for the your-turn transition cue
+
 const RESOURCE_NAMES = { wood: "wood", brick: "brick", sheep: "sheep", wheat: "wheat", ore: "ore" };
 
-const EVENT_SOUNDS = {
-  roll: "roll",
-  build: "build",
-  placeSettlement: "build",
-  placeRoad: "build",
-  bankTrade: "trade",
-  tradeAccepted: "trade",
-  buyDev: "trade",
-  moveRobber: "robber",
-  discard: "discard",
-  gameOver: "win",
-};
+// Per-event sound choice; null = silent.
+function soundForEvent(e) {
+  switch (e.type) {
+    case "roll": return "roll";
+    case "placeRoad": return "road";
+    case "placeSettlement": return "settlement";
+    case "build": return e.kind === "city" ? "city" : e.kind === "settlement" ? "settlement" : "road";
+    case "bankTrade":
+    case "tradeAccepted": return "trade";
+    case "tradeOffer": return "tradeOffer";
+    case "buyDev": return "buyDev";
+    case "playDev": return e.card === "knight" ? "knight" : "playDev";
+    case "moveRobber": return "robber";
+    case "steal": return "steal";
+    case "discard": return "discard";
+    case "production":
+      return mySeat !== null && e.gains[mySeat] && Object.keys(e.gains[mySeat]).length ? "gain" : null;
+    case "setupGrant": return e.seat === mySeat ? "gain" : null;
+    case "longestRoad":
+    case "largestArmy": return e.seat === null ? null : "award";
+    case "gameOver": return e.seat === mySeat ? "winMe" : "winOther";
+    default: return null;
+  }
+}
 
-function playLogSounds() {
+// Visual cues driven by the same log diff as sounds.
+function animateForEvent(e) {
+  switch (e.type) {
+    case "roll":
+      animateDiceRoll();
+      break;
+    case "steal":
+      if (e.victim === mySeat) showEventBanner(`${seatName(e.seat)} stole a card from you!`, "danger");
+      else if (e.seat === mySeat) showEventBanner(`You stole a card from ${seatName(e.victim)}!`, "info");
+      break;
+    case "longestRoad":
+      if (e.seat !== null) showEventBanner(`${seatName(e.seat)} takes Longest Road! 🛣️`, "award");
+      break;
+    case "largestArmy":
+      if (e.seat !== null) showEventBanner(`${seatName(e.seat)} takes Largest Army! ⚔️`, "award");
+      break;
+  }
+}
+
+function processLogEvents() {
   if (soundSeq === null) {
     // First snapshot (page load / rejoin): don't replay history.
     soundSeq = pub.seq;
@@ -143,10 +181,72 @@ function playLogSounds() {
   }
   for (const e of pub.log) {
     if (e.seq <= soundSeq) continue;
-    const fx = EVENT_SOUNDS[e.type];
+    const fx = soundForEvent(e);
     if (fx) playSound(fx);
+    animateForEvent(e);
   }
   soundSeq = pub.seq;
+}
+
+// ---------------------------------------------------------------------------
+// event banner (queued so simultaneous events show one after another)
+// ---------------------------------------------------------------------------
+
+const bannerQueue = [];
+let bannerBusy = false;
+function showEventBanner(text, kind = "info") {
+  bannerQueue.push({ text, kind });
+  if (!bannerBusy) nextBanner();
+}
+function nextBanner() {
+  const item = bannerQueue.shift();
+  if (!item) { bannerBusy = false; return; }
+  bannerBusy = true;
+  const b = els.eventBanner;
+  b.className = `event-banner ${item.kind}`;
+  b.textContent = item.text;
+  b.hidden = false;
+  void b.offsetWidth; // restart the CSS animation
+  b.classList.add("show");
+  setTimeout(() => { b.classList.remove("show"); b.hidden = true; nextBanner(); }, 2300);
+}
+
+// ---------------------------------------------------------------------------
+// your-turn cue + background-tab title flash
+// ---------------------------------------------------------------------------
+
+const BASE_TITLE = document.title;
+let titleFlashTimer = null;
+function startTitleFlash() {
+  if (document.visibilityState === "visible" || titleFlashTimer) return;
+  let on = false;
+  titleFlashTimer = setInterval(() => {
+    document.title = (on = !on) ? "🎲 Your turn!" : BASE_TITLE;
+  }, 1000);
+}
+function stopTitleFlash() {
+  if (!titleFlashTimer) return;
+  clearInterval(titleFlashTimer);
+  titleFlashTimer = null;
+  document.title = BASE_TITLE;
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") stopTitleFlash();
+  else if (pub && pub.phase !== "finished" && myTurn()) startTitleFlash();
+});
+
+function checkTurnCue() {
+  if (pub.phase === "finished") { stopTitleFlash(); return; }
+  if (pub.currentSeat !== lastSeenSeat) {
+    const wasFirstSnapshot = lastSeenSeat === null;
+    lastSeenSeat = pub.currentSeat;
+    if (!wasFirstSnapshot && myTurn()) {
+      playSound("yourTurn");
+      showEventBanner("Your turn!", "turn");
+      startTitleFlash();
+    }
+  }
+  if (!myTurn()) stopTitleFlash();
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +276,14 @@ function connect() {
         return;
       }
       mySeat = res.seat;
+      // A rejoin is a full resync, not a continuation: drop the delta baseline,
+      // the sound cursor, the turn-cue cursor, the board's piece-diff state,
+      // and any queued banners so we don't replay what happened while away.
+      mine = null;
+      soundSeq = null;
+      lastSeenSeat = null;
+      if (renderer) renderer.resetDiff();
+      bannerQueue.length = 0;
       applyState(res.state, res.hand);
     });
   };
@@ -206,11 +314,17 @@ function applyState(newPub, newMine) {
       els.zoomReset.addEventListener("click", () => renderer.resetView());
     }
   }
-  if (newMine) mine = newMine;
+  if (newMine) {
+    prevHand = mine && mine.hand;
+    mine = newMine;
+  }
   if (!pub) return;
 
-  if (newPub) playLogSounds();
-  renderer.render(pub);
+  if (newPub) {
+    processLogEvents();
+    checkTurnCue();
+    renderer.render(pub);
+  }
   renderPlayers();
   renderDice();
   renderBank();
@@ -410,7 +524,9 @@ function renderPlayers() {
   els.players.innerHTML = "";
   pub.seats.forEach((seat, i) => {
     const panel = document.createElement("div");
-    panel.className = "player-panel" + (i === pub.currentSeat ? " current-turn" : "");
+    panel.className = "player-panel"
+      + (i === pub.currentSeat ? " current-turn" : "")
+      + (i === pub.currentSeat && i === mySeat ? " my-turn" : "");
     const dis = seat.connected ? "" : '<span class="disconnected-badge">OFFLINE</span>';
     const you = i === mySeat ? " (you)" : "";
     const badges =
@@ -494,11 +610,44 @@ function renderDie(el, value) {
 }
 
 function renderDice() {
+  if (diceAnimating) return;
   renderDie(els.die1, pub.dice && pub.dice.d1);
   renderDie(els.die2, pub.dice && pub.dice.d2);
 }
 
+function animateDiceRoll() {
+  if (diceAnimating || REDUCED_MOTION) return;
+  diceAnimating = true;
+  els.dicePair.classList.add("tumbling");
+  const iv = setInterval(() => {
+    renderDie(els.die1, 1 + Math.floor(Math.random() * 6));
+    renderDie(els.die2, 1 + Math.floor(Math.random() * 6));
+  }, 80);
+  setTimeout(() => {
+    clearInterval(iv);
+    diceAnimating = false;
+    els.dicePair.classList.remove("tumbling");
+    renderDice();
+    els.dicePair.classList.add("settled");
+    setTimeout(() => els.dicePair.classList.remove("settled"), 320);
+  }, 250);
+}
+
+// Deltas since the previous hand snapshot; consumed on render so pub-only
+// re-renders don't replay the chips.
+function takeHandDeltas() {
+  if (!mine || !prevHand) return {};
+  const out = {};
+  for (const res of RESOURCES) {
+    const d = (mine.hand[res] || 0) - (prevHand[res] || 0);
+    if (d) out[res] = d;
+  }
+  prevHand = null;
+  return out;
+}
+
 function renderHand() {
+  const deltas = REDUCED_MOTION ? {} : takeHandDeltas();
   els.hand.innerHTML = "";
   if (!mine) return;
   for (const res of RESOURCES) {
@@ -508,6 +657,14 @@ function renderHand() {
     card.className = `card card-${res}`;
     card.title = res;
     card.innerHTML = `<span>${RESOURCE_ICONS[res]}</span><span class="card-count">×${n}</span>`;
+    if (deltas[res]) {
+      card.classList.add("bump");
+      const chip = document.createElement("span");
+      chip.className = `delta-chip ${deltas[res] > 0 ? "plus" : "minus"}`;
+      chip.textContent = `${deltas[res] > 0 ? "+" : ""}${deltas[res]}`;
+      chip.addEventListener("animationend", () => chip.remove());
+      card.appendChild(chip);
+    }
     els.hand.appendChild(card);
   }
   if (!els.hand.children.length) {
@@ -970,6 +1127,13 @@ els.buildCity.addEventListener("click", () => armBuild("city"));
 els.buyDev.addEventListener("click", () => { disarm(); sendIntent("catan:buyDev"); });
 els.tradeBank.addEventListener("click", openTradeModal);
 els.tradePlayers.addEventListener("click", openOfferModal);
+
+function refreshSoundToggle() {
+  els.soundToggle.textContent = isMuted() ? "🔇" : "🔊";
+  els.soundToggle.setAttribute("aria-pressed", String(!isMuted()));
+}
+els.soundToggle.addEventListener("click", () => { setMuted(!isMuted()); refreshSoundToggle(); });
+refreshSoundToggle();
 
 if (FIXTURE_MODE) {
   import("./fixture.js").then(({ fixturePublic, fixturePrivate }) => {
