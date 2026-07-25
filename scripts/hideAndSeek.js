@@ -145,18 +145,27 @@ if (!roomName) {
   window.location.href = "./main.html";
 }
 
-socket.emit("rejoinGame", {
-  roomCode: roomName,
-  playerToken: localStorage.getItem("geoPlayerToken"),
-  name: playerName,
-  colour: playerColour,
-}, res => {
-  if (!res || !res.ok) return;
-  localStorage.setItem("geoPlayerToken", res.playerToken);
-  if (res.hs) {
-    phase = res.hs.phase;
-    applyHSSnapshot(res.hs);
-  }
+// Re-emitted on every "connect" (initial load AND every auto-reconnect after
+// a transport drop) — a reconnect gets a new socket id, so without this the
+// new socket never re-joins the room server-side and the held slot silently
+// expires after GEO_GRACE_MS while the tab still looks connected. Repeating
+// this on reconnect just re-applies the current server state through the
+// same applyHSSnapshot path a first-load resume already uses, which is safe
+// to re-run (see applyHSSnapshot's own comments on re-entry).
+socket.on("connect", () => {
+  socket.emit("rejoinGame", {
+    roomCode: roomName,
+    playerToken: localStorage.getItem("geoPlayerToken"),
+    name: playerName,
+    colour: playerColour,
+  }, res => {
+    if (!res || !res.ok) return;
+    localStorage.setItem("geoPlayerToken", res.playerToken);
+    if (res.hs) {
+      phase = res.hs.phase;
+      applyHSSnapshot(res.hs);
+    }
+  });
 });
 
 // Room settings snapshot (sent from server on rejoinGame + on each lobby

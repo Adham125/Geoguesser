@@ -120,28 +120,41 @@ const resumed = new Promise(res => {
 // round's stale pano instead of rolling a fresh one.
 let resumeConsulted = false;
 
-socket.emit("rejoinGame", {
-  roomCode: roomName,
-  playerToken: localStorage.getItem("geoPlayerToken"),
-  name: playerName,
-  colour: playerColour,
-}, res => {
-  if (!res || !res.ok) { resumeReady(null); return; }
-  localStorage.setItem("geoPlayerToken", res.playerToken);
-  if (res.scores) {
-    for (const sid in res.scores) {
-      if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = res.scores[sid];
+// Re-emitted on every "connect" (initial load AND every auto-reconnect after
+// a transport drop) — a reconnect gets a new socket id, so without this the
+// new socket never re-joins the room server-side and the held slot silently
+// expires after GEO_GRACE_MS while the tab still looks connected.
+socket.on("connect", () => {
+  socket.emit("rejoinGame", {
+    roomCode: roomName,
+    playerToken: localStorage.getItem("geoPlayerToken"),
+    name: playerName,
+    colour: playerColour,
+  }, res => {
+    if (!res || !res.ok) { resumeReady(null); return; }
+    localStorage.setItem("geoPlayerToken", res.playerToken);
+    if (res.scores) {
+      for (const sid in res.scores) {
+        if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = res.scores[sid];
+      }
     }
-  }
-  if (res.round) {
-    currentRound = res.round.index;
-    if (res.round.msLeft !== null) {
-      totalSeconds = Math.ceil(res.round.msLeft / 1000);
-      resetTimer();
+    if (res.round) {
+      currentRound = res.round.index;
+      if (res.round.youGuessed) {
+        // Mirror confirmSelect's post-guess chrome so a refresh after guessing
+        // doesn't leave the timer running or the map/pano at their pre-guess
+        // layout (initNextRound's toggle would then flip them the wrong way).
+        confirmButton.disabled = true;
+        mapcss.classList.add("swapped");
+        panocss.classList.add("swapped");
+        clearInterval(timerInterval);
+        timer.style.display = 'none';
+      } else if (res.round.msLeft !== null) {
+        resetTimer(Math.ceil(res.round.msLeft / 1000));
+      }
     }
-    if (res.round.youGuessed) confirmButton.disabled = true;
-  }
-  resumeReady(res.round);
+    resumeReady(res.round);
+  });
 });
 
 socket.on("playerJoined", players => { // vars = players {name, colour}
@@ -188,6 +201,16 @@ socket.on("playerLeft", ({ socketId, players }) => {
   const row = ongoingScoreElement.querySelector(`.score-div[data-sid="${socketId}"]`);
   if (row) row.remove();
   delete playerScoreMap[socketId];
+});
+
+// rejoinGame's playerJoined broadcast rebuilds every row at "0" for everyone
+// else in the room — this restores the running totals the same way the
+// rejoinGame ack does for the refreshing client itself.
+socket.on("scoresUpdate", scores => {
+  if (!scores) return;
+  for (const sid in scores) {
+    if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = scores[sid];
+  }
 });
 
 socket.on("hostChanged", ({ hostId }) => {
@@ -437,8 +460,9 @@ function updateTimer() {
   timer.classList.toggle("warning", totalSeconds > 10 && totalSeconds <= 30);
 }
 
-function resetTimer () {
-  totalSeconds = JSON.parse(localStorage.getItem("timer"))
+function resetTimer (seconds = JSON.parse(localStorage.getItem("timer"))) {
+  clearInterval(timerInterval);
+  totalSeconds = seconds
   timerInterval = setInterval(updateTimer, 1000);
   timer.classList.remove("warning", "critical");
   timer.style.display = 'block';
