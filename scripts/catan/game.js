@@ -9,7 +9,7 @@
 
 import { serverURL as server } from "../config.js";
 import { createRenderer } from "./render.js";
-import { playSound } from "./sounds.js";
+import { playSound, isMuted, setMuted } from "./sounds.js";
 import { trapFocus } from "../modal-behavior.js";
 import { attachConnectionBanner } from "../connection.js";
 
@@ -40,6 +40,7 @@ const els = {
   dicePair: $("dice-pair"),
   diceHint: $("dice-hint"),
   turnTimer: $("turn-timer"),
+  soundToggle: $("sound-toggle"),
   bankRow: $("bank-row"),
   log: $("log"),
   hand: $("hand"),
@@ -981,6 +982,13 @@ els.buildCity.addEventListener("click", () => armBuild("city"));
 els.buyDev.addEventListener("click", () => { disarm(); sendIntent("catan:buyDev"); });
 els.tradeBank.addEventListener("click", openTradeModal);
 els.tradePlayers.addEventListener("click", openOfferModal);
+
+function refreshSoundToggle() {
+  els.soundToggle.textContent = isMuted() ? "🔇" : "🔊";
+  els.soundToggle.setAttribute("aria-pressed", String(!isMuted()));
+}
+els.soundToggle.addEventListener("click", () => { setMuted(!isMuted()); refreshSoundToggle(); });
+refreshSoundToggle();
 
 if (FIXTURE_MODE) {
   import("./fixture.js").then(({ fixturePublic, fixturePrivate }) => {

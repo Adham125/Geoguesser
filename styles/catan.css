@@ -59,6 +59,19 @@ body.catan h1, body.catan h2, body.catan h3 {
   box-shadow: var(--shadow-piece);
 }
 
+.sound-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--c-panel-border);
+  background: var(--c-panel);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-piece);
+}
+.sound-toggle:hover { background: var(--c-panel-2); }
+
 /* ---------- table layout ---------- */
 .catan-table {
   flex: 1;
