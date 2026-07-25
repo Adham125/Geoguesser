@@ -44,7 +44,7 @@ nextButton.addEventListener("click", nextRound);
 
 
 var roundsMax = JSON.parse(localStorage.getItem("rounds"));
-var currentRound = 1;
+var currentRound = 1; // overwritten by the rejoinGame ack when a round is already in progress
 var scoresMenu = document.getElementById("scoresMenu");
 var scoresList = document.getElementById("scoresList");
 let releaseScores = null;
@@ -103,7 +103,34 @@ if (hosting && roomName != "Singleplayer") {
   endGameButton.style.display = "inline-block";
 }
 
-socket.emit("joinedGame", [roomName, playerName, playerColour])
+// Resolves once the server has told us where we are. initialize() waits on
+// this so a refresh restores the round in progress instead of starting one.
+let resumeReady;
+const resumed = new Promise(res => { resumeReady = res; });
+
+socket.emit("rejoinGame", {
+  roomCode: roomName,
+  playerToken: localStorage.getItem("geoPlayerToken"),
+  name: playerName,
+  colour: playerColour,
+}, res => {
+  if (!res || !res.ok) { resumeReady(null); return; }
+  localStorage.setItem("geoPlayerToken", res.playerToken);
+  if (res.scores) {
+    for (const sid in res.scores) {
+      if (playerScoreMap[sid]) playerScoreMap[sid][0].textContent = res.scores[sid];
+    }
+  }
+  if (res.round) {
+    currentRound = res.round.index;
+    if (res.round.msLeft !== null) {
+      totalSeconds = Math.ceil(res.round.msLeft / 1000);
+      resetTimer();
+    }
+    if (res.round.youGuessed) confirmButton.disabled = true;
+  }
+  resumeReady(res.round);
+});
 
 socket.on("playerJoined", players => { // vars = players {name, colour}
   lastPlayers = players || {};
@@ -258,6 +285,14 @@ function renderRoundIndicator() {
 }
 
 async function initialize(id = null) {
+  // On a page load (including a refresh) the Maps callback fires with no id.
+  // Ask the server what round we're in first: if one is already running we
+  // load ITS pano, instead of a host silently re-rolling the round or a
+  // non-host loading nothing at all.
+  if (id === null && roomName !== "Singleplayer") {
+    const round = await resumed;
+    if (round && round.panoId) id = round.panoId;
+  }
   //const fenway = { lat: 42.345573, lng: -71.098326 };
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 0, lng: 0 },
