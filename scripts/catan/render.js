@@ -200,34 +200,62 @@ export function createRenderer(svg, board, opts = {}) {
   }
 
   // --- dynamic layers ------------------------------------------------------
+  let drawnEdges = new Set();  // edge ids already on the board
+  let drawnVertices = {};      // vid -> "settlement" | "city" already drawn
+  let robberEl = null;
+  let firstRender = true;
+
   function render(pub) {
     gRoads.innerHTML = "";
     gBuildings.innerHTML = "";
-    gRobber.innerHTML = "";
 
+    const seenEdges = new Set();
     for (const eid in pub.occupied.edges) {
+      seenEdges.add(eid);
       const seat = pub.occupied.edges[eid].seat;
       const colour = pub.seats[seat].colour;
       const seg = roadSegment(eid);
-      el("line", { ...lineAttrs(seg), class: "road-outline" }, gRoads);
-      el("line", { ...lineAttrs(seg), class: "road", stroke: colour }, gRoads);
+      // New roads draw in from one end (stroke-dash animation, CSS-driven).
+      const isNew = !firstRender && !drawnEdges.has(eid);
+      const dash = isNew
+        ? { "stroke-dasharray": Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1).toFixed(1) }
+        : {};
+      if (isNew) dash["stroke-dashoffset"] = dash["stroke-dasharray"];
+      el("line", { ...lineAttrs(seg), ...dash, class: `road-outline${isNew ? " piece-new" : ""}` }, gRoads);
+      el("line", { ...lineAttrs(seg), ...dash, class: `road${isNew ? " piece-new" : ""}`, stroke: colour }, gRoads);
     }
+    drawnEdges = seenEdges;
 
+    const seenVertices = {};
     for (const vid in pub.occupied.vertices) {
       const { seat, type } = pub.occupied.vertices[vid];
+      seenVertices[vid] = type;
+      // Pop in when the vertex is newly built OR upgraded settlement -> city.
+      const isNew = !firstRender && drawnVertices[vid] !== type;
       const colour = pub.seats[seat].colour;
       const c = vertexCenter(vid);
       el("polygon", {
         points: type === "city" ? cityPoints(c) : settlementPoints(c),
-        class: `building building-${type}`,
+        class: `building building-${type}${isNew ? " piece-new" : ""}`,
         fill: colour,
       }, gBuildings);
     }
+    drawnVertices = seenVertices;
 
+    // Persistent robber: created once, then slid via a transform transition.
     const rc = hexCenter(pub.robberHex);
-    const robber = el("g", { class: "robber" }, gRobber);
-    el("ellipse", { cx: rc.x - 24, cy: rc.y + 10, rx: 10, ry: 13, class: "robber-body" }, robber);
-    el("circle", { cx: rc.x - 24, cy: rc.y - 8, r: 7, class: "robber-body" }, robber);
+    if (!robberEl) {
+      robberEl = el("g", { class: "robber" }, gRobber);
+      el("ellipse", { cx: -24, cy: 10, rx: 10, ry: 13, class: "robber-body" }, robberEl);
+      el("circle", { cx: -24, cy: -8, r: 7, class: "robber-body" }, robberEl);
+    }
+    if (firstRender) robberEl.style.transition = "none";
+    robberEl.style.transform = `translate(${rc.x}px, ${rc.y}px)`;
+    if (firstRender) {
+      robberEl.getBoundingClientRect(); // flush so the initial position doesn't animate
+      robberEl.style.transition = "";
+      firstRender = false;
+    }
   }
 
   function lineAttrs(seg) {

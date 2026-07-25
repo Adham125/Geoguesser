@@ -387,6 +387,22 @@ body.catan h1, body.catan h2, body.catan h3 {
 
 .robber-body { fill: #4A4238; stroke: #2E2922; stroke-width: 1.5; }
 
+/* new pieces animate in; .piece-new only exists on the snapshot that adds them */
+.building.piece-new {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: piece-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes piece-pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+.road.piece-new, .road-outline.piece-new { animation: road-draw 350ms ease forwards; }
+@keyframes road-draw {
+  to { stroke-dashoffset: 0; }
+}
+.robber { transition: transform 600ms cubic-bezier(0.5, -0.15, 0.3, 1.2); }
+
 /* hit targets: invisible until armed */
 .hit { fill: transparent; stroke: transparent; pointer-events: none; }
 .hit-edge { stroke-width: 16; }
