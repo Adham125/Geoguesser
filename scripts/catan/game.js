@@ -122,20 +122,31 @@ let dismissedTradeKey = null; // signature of the last incoming offer we decline
 
 const RESOURCE_NAMES = { wood: "wood", brick: "brick", sheep: "sheep", wheat: "wheat", ore: "ore" };
 
-const EVENT_SOUNDS = {
-  roll: "roll",
-  build: "build",
-  placeSettlement: "build",
-  placeRoad: "build",
-  bankTrade: "trade",
-  tradeAccepted: "trade",
-  buyDev: "trade",
-  moveRobber: "robber",
-  discard: "discard",
-  gameOver: "win",
-};
+// Per-event sound choice; null = silent.
+function soundForEvent(e) {
+  switch (e.type) {
+    case "roll": return "roll";
+    case "placeRoad": return "road";
+    case "placeSettlement": return "settlement";
+    case "build": return e.kind === "city" ? "city" : e.kind === "settlement" ? "settlement" : "road";
+    case "bankTrade":
+    case "tradeAccepted": return "trade";
+    case "tradeOffer": return "tradeOffer";
+    case "buyDev": return "buyDev";
+    case "playDev": return e.card === "knight" ? "knight" : "playDev";
+    case "moveRobber": return "robber";
+    case "steal": return "steal";
+    case "discard": return "discard";
+    case "production":
+      return mySeat !== null && e.gains[mySeat] && Object.keys(e.gains[mySeat]).length ? "gain" : null;
+    case "longestRoad":
+    case "largestArmy": return e.seat === null ? null : "award";
+    case "gameOver": return e.seat === mySeat ? "winMe" : "winOther";
+    default: return null;
+  }
+}
 
-function playLogSounds() {
+function processLogEvents() {
   if (soundSeq === null) {
     // First snapshot (page load / rejoin): don't replay history.
     soundSeq = pub.seq;
@@ -143,7 +154,7 @@ function playLogSounds() {
   }
   for (const e of pub.log) {
     if (e.seq <= soundSeq) continue;
-    const fx = EVENT_SOUNDS[e.type];
+    const fx = soundForEvent(e);
     if (fx) playSound(fx);
   }
   soundSeq = pub.seq;
@@ -209,7 +220,7 @@ function applyState(newPub, newMine) {
   if (newMine) mine = newMine;
   if (!pub) return;
 
-  if (newPub) playLogSounds();
+  if (newPub) processLogEvents();
   renderer.render(pub);
   renderPlayers();
   renderDice();
