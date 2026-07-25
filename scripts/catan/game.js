@@ -198,6 +198,10 @@ function connect() {
         return;
       }
       mySeat = res.seat;
+      // A rejoin is a full resync, not a continuation: drop the delta baseline
+      // and the sound cursor so we don't replay what happened while away.
+      mine = null;
+      soundSeq = null;
       applyState(res.state, res.hand);
     });
   };
