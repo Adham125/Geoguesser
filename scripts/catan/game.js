@@ -222,7 +222,7 @@ function applyState(newPub, newMine) {
   if (!pub) return;
 
   if (newPub) processLogEvents();
-  renderer.render(pub);
+  if (newPub) renderer.render(pub);
   renderPlayers();
   renderDice();
   renderBank();
