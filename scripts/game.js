@@ -3,6 +3,7 @@ import { serverURL as server } from './config.js';
 import { showMessage, showConfirm, showToast } from './popup.js';
 import { attachConnectionBanner } from './connection.js';
 import { trapFocus } from './modal-behavior.js';
+import { disconnectedIconEl } from './disconnected-icon.js';
 
 const geojsonFilePath = '../geojson/world.geojson';
 var map;
@@ -186,6 +187,11 @@ socket.on("playerJoined", players => { // vars = players {name, colour}
     checkmarkDiv.style.display = 'none'; // Initially hidden
 
     scoreDiv.appendChild(playerNameSpan);
+    // Held disconnected slots stay in the roster for the 60s grace window —
+    // flag them so it's clear who the round is (not) waiting on.
+    if (players[player].connected === false) {
+      scoreDiv.appendChild(disconnectedIconEl());
+    }
     scoreDiv.appendChild(scoreSpan);
     scoreDiv.appendChild(checkmarkDiv);
     ongoingScoreElement.appendChild(scoreDiv);

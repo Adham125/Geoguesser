@@ -414,6 +414,20 @@ button.actionButton {
 @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(-8px); } }
 
+/* ---------- Disconnected indicator ---------- */
+/* The SVG is shared with Catan (scripts/disconnected-icon.js) and paints with
+   currentColor; only the colour is per-theme, because the two themes share no
+   stylesheet. Catan's copy of this rule lives in catan.css. */
+.disconnect-icon {
+  color: var(--color-destructive);
+  vertical-align: -2px;
+}
+.disconnect-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 4px;
+}
+
 /* ---------- Utilities ---------- */
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
