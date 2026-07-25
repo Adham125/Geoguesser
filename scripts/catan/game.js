@@ -12,6 +12,7 @@ import { createRenderer } from "./render.js";
 import { playSound, isMuted, setMuted } from "./sounds.js";
 import { trapFocus } from "../modal-behavior.js";
 import { attachConnectionBanner } from "../connection.js";
+import { disconnectedIconHTML } from "../disconnected-icon.js";
 
 const RESOURCES = ["wood", "brick", "sheep", "wheat", "ore"];
 const RESOURCE_ICONS = { wood: "🪵", brick: "🧱", sheep: "🐑", wheat: "🌾", ore: "🪨" };
@@ -527,7 +528,7 @@ function renderPlayers() {
     panel.className = "player-panel"
       + (i === pub.currentSeat ? " current-turn" : "")
       + (i === pub.currentSeat && i === mySeat ? " my-turn" : "");
-    const dis = seat.connected ? "" : '<span class="disconnected-badge">OFFLINE</span>';
+    const dis = seat.connected ? "" : disconnectedIconHTML();
     const you = i === mySeat ? " (you)" : "";
     const badges =
       (pub.longestRoad === i ? `<span class="award" title="Longest Road (${pub.longestRoadLen})">🛣️</span>` : "") +

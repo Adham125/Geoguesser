@@ -190,12 +190,13 @@ body.catan h1, body.catan h2, body.catan h3 {
   text-overflow: ellipsis;
 }
 
-.player-name .disconnected-badge {
-  font-family: var(--f-body);
-  font-size: 0.7rem;
-  font-weight: 800;
+/* Disconnected indicator. The SVG itself is shared with Geoguesser
+   (scripts/disconnected-icon.js) and paints with currentColor; only the
+   colour is per-theme, because the two themes share no stylesheet. */
+.player-name .disconnect-icon {
   color: var(--c-danger);
   margin-left: 6px;
+  vertical-align: -2px;
 }
 
 .player-stats {

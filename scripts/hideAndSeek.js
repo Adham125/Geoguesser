@@ -1,6 +1,7 @@
 import { serverURL as server } from './config.js';
 import { showMessage, showConfirm } from './popup.js';
 import { attachConnectionBanner } from './connection.js';
+import { disconnectedIconHTML } from './disconnected-icon.js';
 
 // =====================================================================
 // Hide & Seek — two-phase multiplayer client.
@@ -909,10 +910,14 @@ function renderRoster() {
     const li = document.createElement("li");
     if (sid === socket.id) li.classList.add("is-me");
     const hostTag = sid === currentHostId ? `<span class="host-badge">HOST</span>` : "";
+    // Held disconnected slots survive the 60s grace window — mark them so the
+    // roster shows who is actually present.
+    const dis = p.connected === false ? disconnectedIconHTML() : "";
     if (phase === "hide") {
       if (readySet.has(sid)) li.classList.add("ready");
       li.innerHTML = `
         <span class="player-chip" style="--player-color:${p.colour}">${escapeHtml(p.name)}${sid === socket.id ? " (you)" : ""}</span>
+        ${dis}
         ${hostTag}
         <span class="ready-dot" aria-hidden="true"></span>`;
     } else if (phase === "seek") {
@@ -923,12 +928,14 @@ function renderRoster() {
         ? `<span class="guess-badge">GUESSED</span>` : "";
       li.innerHTML = `
         <span class="player-chip" style="--player-color:${p.colour}">${escapeHtml(p.name)}${sid === socket.id ? " (you)" : ""}</span>
+        ${dis}
         ${hostTag}
         ${guessTag}
         <span class="score-value">${scoreStr}</span>`;
     } else {
       li.innerHTML = `
         <span class="player-chip" style="--player-color:${p.colour}">${escapeHtml(p.name)}</span>
+        ${dis}
         ${hostTag}
         <span class="score-value">${(scoreSnapshot[sid] || 0).toLocaleString()}</span>`;
     }
