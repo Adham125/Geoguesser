@@ -121,6 +121,10 @@ let soundSeq = null;         // last log seq we've played sounds for
 let timerTick = null;        // interval id for the turn-timer countdown
 let dismissedTradeKey = null; // signature of the last incoming offer we declined
 
+const REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let prevHand = null;      // hand before the latest catan:hand, for delta chips
+let diceAnimating = false;
+
 const RESOURCE_NAMES = { wood: "wood", brick: "brick", sheep: "sheep", wheat: "wheat", ore: "ore" };
 
 // Per-event sound choice; null = silent.
@@ -147,6 +151,11 @@ function soundForEvent(e) {
   }
 }
 
+// Visual cues driven by the same log diff as sounds (Task 7 adds banners).
+function animateForEvent(e) {
+  if (e.type === "roll") animateDiceRoll();
+}
+
 function processLogEvents() {
   if (soundSeq === null) {
     // First snapshot (page load / rejoin): don't replay history.
@@ -157,6 +166,7 @@ function processLogEvents() {
     if (e.seq <= soundSeq) continue;
     const fx = soundForEvent(e);
     if (fx) playSound(fx);
+    animateForEvent(e);
   }
   soundSeq = pub.seq;
 }
@@ -218,7 +228,10 @@ function applyState(newPub, newMine) {
       els.zoomReset.addEventListener("click", () => renderer.resetView());
     }
   }
-  if (newMine) mine = newMine;
+  if (newMine) {
+    prevHand = mine && mine.hand;
+    mine = newMine;
+  }
   if (!pub) return;
 
   if (newPub) processLogEvents();
@@ -506,11 +519,44 @@ function renderDie(el, value) {
 }
 
 function renderDice() {
+  if (diceAnimating) return;
   renderDie(els.die1, pub.dice && pub.dice.d1);
   renderDie(els.die2, pub.dice && pub.dice.d2);
 }
 
+function animateDiceRoll() {
+  if (diceAnimating || REDUCED_MOTION) return;
+  diceAnimating = true;
+  els.dicePair.classList.add("tumbling");
+  const iv = setInterval(() => {
+    renderDie(els.die1, 1 + Math.floor(Math.random() * 6));
+    renderDie(els.die2, 1 + Math.floor(Math.random() * 6));
+  }, 80);
+  setTimeout(() => {
+    clearInterval(iv);
+    diceAnimating = false;
+    els.dicePair.classList.remove("tumbling");
+    renderDice();
+    els.dicePair.classList.add("settled");
+    setTimeout(() => els.dicePair.classList.remove("settled"), 320);
+  }, 420);
+}
+
+// Deltas since the previous hand snapshot; consumed on render so pub-only
+// re-renders don't replay the chips.
+function takeHandDeltas() {
+  if (!mine || !prevHand) return {};
+  const out = {};
+  for (const res of RESOURCES) {
+    const d = (mine.hand[res] || 0) - (prevHand[res] || 0);
+    if (d) out[res] = d;
+  }
+  prevHand = null;
+  return out;
+}
+
 function renderHand() {
+  const deltas = REDUCED_MOTION ? {} : takeHandDeltas();
   els.hand.innerHTML = "";
   if (!mine) return;
   for (const res of RESOURCES) {
@@ -520,6 +566,14 @@ function renderHand() {
     card.className = `card card-${res}`;
     card.title = res;
     card.innerHTML = `<span>${RESOURCE_ICONS[res]}</span><span class="card-count">×${n}</span>`;
+    if (deltas[res]) {
+      card.classList.add("bump");
+      const chip = document.createElement("span");
+      chip.className = `delta-chip ${deltas[res] > 0 ? "plus" : "minus"}`;
+      chip.textContent = `${deltas[res] > 0 ? "+" : ""}${deltas[res]}`;
+      chip.addEventListener("animationend", () => chip.remove());
+      card.appendChild(chip);
+    }
     els.hand.appendChild(card);
   }
   if (!els.hand.children.length) {
