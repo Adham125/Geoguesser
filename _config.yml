@@ -1,5 +1,25 @@
 title: My Website
 description: A GitHub Pages site
 url: "https://Adham125.github.io"
-baseurl: "/Geoguesser" 
-theme: jekyll-theme-minimal 
+baseurl: "/Geoguesser"
+theme: jekyll-theme-minimal
+
+# _site IS the public web root (the Node server does express.static on it), so
+# anything Jekyll copies there is served to the internet. By default that
+# included package.json, package-lock.json (the full resolved dependency tree,
+# handing an attacker exact versions to match against CVEs), README.md and
+# personal scratch notes. None of those belong on a game site.
+#
+# Jekyll already skips node_modules/ and Gemfile*, but they are listed
+# explicitly so the intent survives a future config change.
+exclude:
+  - node_modules
+  - package.json
+  - package-lock.json
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - things to do.txt
+  - .gitignore
+  - .github
+  - .superpowers

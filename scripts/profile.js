@@ -324,16 +324,36 @@ function addGeoJSONLayer(geojson, countryStats) {
 
 function showCountryStats(countryName, stats, boundaries) {
     document.getElementById('country-stats').classList.remove('hidden');
-    document.getElementById('country-details').innerHTML = `
-        <p><strong>${countryName}</strong></p>
-        <p>Total Rounds: ${stats.totalRounds ?? '—'}</p>
-        <p>Average Score: ${stats.averageScore !== undefined ? Math.round(stats.averageScore) : '—'}</p>
-        <p>Average Distance: ${stats.averageDistance !== undefined ? Math.round(stats.averageDistance) + ' km' : '—'}</p>
-        <p>Average Time: ${stats.averageTime !== undefined ? Math.round(stats.averageTime) + ' s' : '—'}</p>
-        <p>Best Score: ${stats.bestScore ?? '—'}</p>
-        <p>Best Distance: ${stats.bestDistance !== undefined && stats.bestDistance !== Infinity ? Math.round(stats.bestDistance) + ' km' : '—'}</p>
-        <p>Top 3 Mistaken Countries: ${stats.topMistakes ?? '—'}</p>
-    `;
+
+    // Built with textContent, not innerHTML. `topMistakes` is derived from
+    // guessCountryISO values that came off the wire and were persisted to the
+    // player's own game history — an ISO code that isn't one (say, an <img
+    // onerror=…>) rendered as markup here. The server validates the code on
+    // the way in now; this is the matching fix on the way out, and it covers
+    // rows already stored under the old rules.
+    const rows = [
+        [null, countryName],
+        ['Total Rounds', stats.totalRounds ?? '—'],
+        ['Average Score', stats.averageScore !== undefined ? Math.round(stats.averageScore) : '—'],
+        ['Average Distance', stats.averageDistance !== undefined ? Math.round(stats.averageDistance) + ' km' : '—'],
+        ['Average Time', stats.averageTime !== undefined ? Math.round(stats.averageTime) + ' s' : '—'],
+        ['Best Score', stats.bestScore ?? '—'],
+        ['Best Distance', stats.bestDistance !== undefined && stats.bestDistance !== Infinity ? Math.round(stats.bestDistance) + ' km' : '—'],
+        ['Top 3 Mistaken Countries', stats.topMistakes ?? '—'],
+    ];
+    const details = document.getElementById('country-details');
+    details.textContent = '';
+    for (const [label, value] of rows) {
+        const p = document.createElement('p');
+        if (label === null) {
+            const strong = document.createElement('strong');
+            strong.textContent = String(value);
+            p.appendChild(strong);
+        } else {
+            p.textContent = `${label}: ${value}`;
+        }
+        details.appendChild(p);
+    }
 
     if (window.currentBoundaryLayer) {
         map.removeLayer(window.currentBoundaryLayer);
